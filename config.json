@@ -1,0 +1,49 @@
+{
+    "ss": "servisofts.dhm",
+    "socket_client": {
+        "servicio": {
+            "puerto": 10001,
+            "ip": "192.168.5.1",
+            "cert": {
+                "OU": "servicio",
+                "pem": "servicio.pem"
+            }
+        },
+        "reconectTime": 10000
+    },
+    "files": {
+        "url": "/u01/servisoftsFiles/dhm/"
+    },
+    "sqlServerApi":{
+        "url":"http://192.168.3.2:8080/",
+        "_url":"http://181.188.139.50:9091/",
+        "apiKey":"servisofts"
+    },
+    "data_base": {
+        "puerto": 5432,
+        "pass": "postgres",
+        "ip": "192.168.5.49",
+        "bd_name": "servisofts.dhm",
+        "user": "postgres"
+    },
+    "nombre": "dhm",
+    "ssl": {
+        "pass_jks": "Servisofts123.",
+        "cert": {
+            "ST": "Av Banzer",
+            "C": "BO",
+            "E": "servisofts.srl@gmail.com",
+            "OU": "dhm",
+            "CN": "dhm.servisofts.com",
+            "L": "Santa Cruz",
+            "O": "SERVISOFTS S.R.L."
+        },
+        "nombre_jks": "servisofts"
+    },
+    "mail_server": {
+        "host": "smtp.gmail.com",
+        "port": 465,
+        "email": "servisofts.srl@gmail.com",
+        "password": "lnbobhqzmnlweskm"
+    }
+}

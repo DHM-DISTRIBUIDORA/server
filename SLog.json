@@ -1,0 +1,18 @@
+{
+  "Servicios": {
+    "roles_permisos": {
+      "host": "192.168.5.16:10016",
+      "status": "exito"
+    },
+    "usuario": {
+      "host": "192.168.5.2:10002",
+      "status": "exito"
+    }
+  },
+  "PostgreSQL": {
+    "host": "jdbc:postgresql://192.168.5.49:5432/servisofts.dhm",
+    "status": "exito"
+  },
+  "- SLog": "RealTime Log from server Servisofts",
+  "- Fecha": "2023-07-12T21:18:32.000940"
+}
