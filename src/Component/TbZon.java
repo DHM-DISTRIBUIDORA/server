@@ -64,7 +64,7 @@ public class TbZon {
     public static void registro(JSONObject obj, SSSessionAbstract session) {
         try {
             JSONObject data = obj.getJSONObject("data");
-            data.put("fecmod", SUtil.now());
+            data.put("zfecmod", SUtil.now());
             data.put("usumod", "Prueba");
 
             Dhm.registro(COMPONENT, PK, data);
@@ -79,7 +79,7 @@ public class TbZon {
     public static void editar(JSONObject obj, SSSessionAbstract session) {
         try {
             JSONObject data = obj.getJSONObject("data");
-            data.put("fecmod", SUtil.now());
+            data.put("zfecmod", SUtil.now());
             data.put("usumod", "Prueba");
             Dhm.editar(COMPONENT, PK, data);
             obj.put("estado", "exito");

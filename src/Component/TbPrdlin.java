@@ -2,10 +2,11 @@ package Component;
 
 import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
+import Servisofts.SUtil;
 
-public class DmClientes {
-    public static final String COMPONENT = "dm_clientes";
-    public static final String PK = "clicod";
+public class TbPrdlin {
+    public static final String COMPONENT = "tbprdlin";
+    public static final String PK = "idlinea";
 
     public static void onMessage(JSONObject obj, SSSessionAbstract session) {
         switch (obj.getString("type")) {
@@ -63,6 +64,10 @@ public class DmClientes {
     public static void registro(JSONObject obj, SSSessionAbstract session) {
         try {
             JSONObject data = obj.getJSONObject("data");
+            data.put("fecmod", SUtil.now());
+            data.put("usumod", "Prueba");
+            data.put("empest", 1);
+
             Dhm.registro(COMPONENT, PK, data);
             obj.put("estado", "exito");
         } catch (Exception e) {
@@ -75,6 +80,8 @@ public class DmClientes {
     public static void editar(JSONObject obj, SSSessionAbstract session) {
         try {
             JSONObject data = obj.getJSONObject("data");
+            data.put("fecmod", SUtil.now());
+            data.put("usumod", "Prueba");
             Dhm.editar(COMPONENT, PK, data);
             obj.put("estado", "exito");
         } catch (Exception e) {
@@ -83,5 +90,4 @@ public class DmClientes {
             e.printStackTrace();
         }
     }
-
 }

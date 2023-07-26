@@ -14,45 +14,29 @@ public class Manejador {
             return;
         }
         switch (obj.getString("component")) {
-            case Dato.COMPONENT:
-                Dato.onMessage(obj, session);
-                break;
-            case RolDato.COMPONENT:
-                RolDato.onMessage(obj, session);
-                break;
-            case UsuarioDato.COMPONENT:
-                UsuarioDato.onMessage(obj, session);
-                break;
-            case Reporte.COMPONENT:
-                Reporte.onMessage(obj, session);
-                break;
-            case Dhm.COMPONENT:
-                Dhm.onMessage(obj, session);
-                break;
-            case DmCategorias.COMPONENT:
-                DmCategorias.onMessage(obj, session);
-                break;
-            case DmProductos.COMPONENT:
-                DmProductos.onMessage(obj, session);
-                break;
-            case DmPedido.COMPONENT:
-                DmPedido.onMessage(obj, session);
-                break;
-            case DmClientes.COMPONENT:
-                DmClientes.onMessage(obj, session);
-                break;
-            case DmUsuarios.COMPONENT:
-                DmUsuarios.onMessage(obj, session);
-                break;
-            case TbEmp.COMPONENT:
-                TbEmp.onMessage(obj, session);
-                break;
-            case TbZon.COMPONENT:
-                TbZon.onMessage(obj, session);
-                break;
-            case TbRutaDia.COMPONENT:
-                TbRutaDia.onMessage(obj, session);
-                break;
+            case Dato.COMPONENT: Dato.onMessage(obj, session); break;
+            case RolDato.COMPONENT: RolDato.onMessage(obj, session); break;
+            case UsuarioDato.COMPONENT: UsuarioDato.onMessage(obj, session); break;
+            case Reporte.COMPONENT: Reporte.onMessage(obj, session); break;
+            case Dhm.COMPONENT: Dhm.onMessage(obj, session); break;
+            case DmCategorias.COMPONENT: DmCategorias.onMessage(obj, session); break;
+            case DmProductos.COMPONENT: DmProductos.onMessage(obj, session); break;
+            case DmPedido.COMPONENT: DmPedido.onMessage(obj, session); break;
+            case DmClientes.COMPONENT: DmClientes.onMessage(obj, session); break;
+            case DmUsuarios.COMPONENT: DmUsuarios.onMessage(obj, session); break;
+            case TbEmp.COMPONENT: TbEmp.onMessage(obj, session); break;
+            case TbZon.COMPONENT: TbZon.onMessage(obj, session); break;
+            case TbRutaDia.COMPONENT: TbRutaDia.onMessage(obj, session); break;
+            case TbEmt.COMPONENT: TbEmt.onMessage(obj, session); break;
+            case TbVen.COMPONENT: TbVen.onMessage(obj, session); break;
+            case DmCabFac.COMPONENT: DmCabFac.onMessage(obj, session); break;
+            case TbPrd.COMPONENT: TbPrd.onMessage(obj, session); break;
+            case TbVd.COMPONENT: TbVd.onMessage(obj, session); break;
+            case TbSucesos.COMPONENT: TbSucesos.onMessage(obj, session); break;
+            case TbVc.COMPONENT: TbVc.onMessage(obj, session); break;
+            case TbPrdlin.COMPONENT: TbPrdlin.onMessage(obj, session); break;
+            case TbCli.COMPONENT: TbCli.onMessage(obj, session); break;
+            case TbCliTipo.COMPONENT: TbCliTipo.onMessage(obj, session); break;
         }
     }
 }

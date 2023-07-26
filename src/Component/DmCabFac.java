@@ -3,9 +3,9 @@ package Component;
 import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
 
-public class DmClientes {
-    public static final String COMPONENT = "dm_clientes";
-    public static final String PK = "clicod";
+public class DmCabFac {
+    public static final String COMPONENT = "dm_cabfac";
+    public static final String PK = "idven";
 
     public static void onMessage(JSONObject obj, SSSessionAbstract session) {
         switch (obj.getString("type")) {
@@ -83,5 +83,4 @@ public class DmClientes {
             e.printStackTrace();
         }
     }
-
 }

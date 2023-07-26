@@ -14,9 +14,60 @@ public class Dhm {
             case "get":
                 get(obj, session);
                 break;
+            case "perfilEmp":
+                perfilEmp(obj, session);
+                break;
         }
     }
 
+    public static void perfilEmp(JSONObject obj, SSSessionAbstract session) {
+        try {
+            String url = SConfig.getJSON("sqlServerApi").getString("url")+"api/select";
+            String apiKey = SConfig.getJSON("sqlServerApi").getString("apiKey");
+
+            String consulta = ""+
+
+            "select tbemp.idemp, "+
+            "( "+
+            "    select count(tbcli.idcli) "+
+            "    from tbcli "+
+            "    where cliidemp = tbemp.idemp "+
+            ") as  cantidad_clientes, "+
+            "( "+
+            "    select count(tbzon.idz) "+
+            "    from tbzon "+
+            "    where tbzon.idemp = tbemp.idemp "+
+            ") as  cantidad_zonas, "+
+            "( "+
+            "    select count(tbven.idven) "+
+            "    from tbven "+
+            "    where tbven.idemp = tbemp.idemp "+
+            "    and tbven.vtipo in ('VD') "+
+            ") as  cantidad_pedidos, "+
+            "( "+
+            "    select count(tbven.idven) "+
+            "    from tbven "+
+            "    where tbven.idemp = tbemp.idemp "+
+            "    and tbven.vtipo not in ('VD') "+
+            ") as  cantidad_ventas, "+
+            "( "+
+            "    select count(tbcom.idcom) "+
+            "    from tbcom "+
+            "    where tbcom.idemp = tbemp.idemp "+
+            ") as  cantidad_compras "+
+            "from tbemp "+
+            "where tbemp.idemp = "+obj.get("idemp");
+
+            JSONArray data = Http.send_(url, consulta, apiKey);
+            
+            obj.put("data", data);
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
     public static void get(JSONObject obj, SSSessionAbstract session) {
         try {
@@ -39,6 +90,28 @@ public class Dhm {
             String url = SConfig.getJSON("sqlServerApi").getString("url")+"api/select";
             String apiKey = SConfig.getJSON("sqlServerApi").getString("apiKey");
             return Http.send_(url, "select * from "+nombreTabla, apiKey);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static JSONArray query(String consulta) {
+        try {
+            String url = SConfig.getJSON("sqlServerApi").getString("url")+"api/select";
+            String apiKey = SConfig.getJSON("sqlServerApi").getString("apiKey");
+            return Http.send_(url, consulta, apiKey);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static JSONArray getMax(String nombreTabla, String column, String where) {
+        try {
+            String url = SConfig.getJSON("sqlServerApi").getString("url")+"api/select";
+            String apiKey = SConfig.getJSON("sqlServerApi").getString("apiKey");
+            return Http.send_(url, "select max("+column+") as max from "+nombreTabla+" "+where, apiKey);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -150,6 +223,69 @@ public class Dhm {
         JSONArray last = Http.send_(url,  "SELECT MAX("+PK+") AS curval FROM "+nombreTabla, apiKey);
         data.put(PK, last.getJSONObject(0).getInt("curval"));
         return true;
+
+    }
+
+    public static void registroAll(String nombreTabla, String PK , JSONArray obj) throws Exception{
+        
+        String consulta = "";
+
+        for (int k = 0; k < obj.length(); k++) {
+        
+            String names = "";
+            String values = "";
+            
+            JSONObject data = obj.getJSONObject(k);
+
+            JSONArray  medatada = getMetaData(nombreTabla);
+            JSONObject medatada_ = new JSONObject();
+
+            for (int i = 0; i < medatada.length(); i++) {
+                medatada_.put(medatada.getJSONObject(i).getString("COLUMN_NAME"), medatada.getJSONObject(i));
+            }
+
+            
+            for (int i = 0; i < JSONObject.getNames(data).length; i++) {
+                String dato = JSONObject.getNames(data)[i];
+
+                if(!medatada_.has(dato)){
+                    continue;
+                }
+                if(!dato.equals(PK)){
+                    names+= dato+",";
+                }
+
+                Object valor = data.get(dato);
+                if (valor instanceof String) {
+                    //Tipo de dato: String
+
+                    try{
+                        //Verificando si es fecha
+                        SUtil.parseTimestamp(valor.toString());
+                        values +="CAST('"+valor+"' AS DATETIME2), ";
+                    }catch(Exception e){
+                        if(!dato.equals(PK)){
+                            values+="'"+valor+"',";
+                        }
+                    }
+                    
+                } else {
+                    if(!dato.equals(PK)){
+                        values+=valor+",";
+                    }
+                }    
+            }
+
+            names = names.substring(0, names.length()-1);
+            values = values.substring(0, values.length()-1);
+
+            consulta += "insert into "+nombreTabla+" ( "+names+" ) values ( "+values+" ); ";
+        }
+
+
+        String url = SConfig.getJSON("sqlServerApi").getString("url")+"api/select";
+        String apiKey = SConfig.getJSON("sqlServerApi").getString("apiKey");
+        Http.send_(url,  consulta, apiKey);
 
     }
 
