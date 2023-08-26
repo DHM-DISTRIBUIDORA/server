@@ -54,8 +54,12 @@ public class Dhm {
             "    select count(tbcom.idcom) "+
             "    from tbcom "+
             "    where tbcom.idemp = tbemp.idemp "+
-            ") as  cantidad_compras "+
-            "from tbemp "+
+            ") as  cantidad_compras, ";
+
+            consulta += "(select sum(tbvd.vdpre*tbvd.vdcan)  from tbven, tbvd where tbven.vtipo in ('VF') and tbven.idemp = tbemp.idemp and tbvd.idven = tbven.idven) as monto_total_ventas, ";
+            consulta += "(select sum(tbvd.vdpre*tbvd.vdcan)  from tbven, tbvd where tbven.vtipo in ('VD') and tbven.idemp = tbemp.idemp and tbvd.idven = tbven.idven) as monto_total_pedidos ";
+
+            consulta += "from tbemp "+
             "where tbemp.idemp = "+obj.get("idemp");
 
             JSONArray data = Http.send_(url, consulta, apiKey);

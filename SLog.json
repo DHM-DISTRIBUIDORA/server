@@ -7,6 +7,10 @@
     "usuario": {
       "host": "192.168.5.2:10002",
       "status": "exito"
+    },
+    "geolocation": {
+      "host": "192.168.5.5:10005",
+      "status": "exito"
     }
   },
   "PostgreSQL": {
@@ -14,5 +18,5 @@
     "status": "exito"
   },
   "- SLog": "RealTime Log from server Servisofts",
-  "- Fecha": "2023-07-26T02:55:40.000588"
+  "- Fecha": "2023-08-26T02:26:50.000116"
 }

@@ -1,11 +1,7 @@
 package Component;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.google.gson.JsonObject;
-
 import Server.SSSAbstract.SSSessionAbstract;
 import Servisofts.SUtil;
 
@@ -41,7 +37,27 @@ public class TbVen {
 
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
-            obj.put("data", Dhm.getAll(COMPONENT));
+            String consulta="select tbven.*, (select sum(tbvd) from tbvd where tbvd.idven = tbven.idven ) as monto from tbven";
+            if(obj.has("idcli")){
+                consulta = "    select tbven.* ";
+                consulta += "        from tbven ";
+                consulta += "    where tbven.idcli =  "+obj.get("idcli");
+            }
+
+            if(obj.has("idemp")){
+                consulta = "    select tbven.* ";
+                consulta += "        from tbven ";
+                consulta += "    where tbven.idemp =  "+obj.get("idemp");
+            }
+
+            if(obj.has("idz")){
+                consulta = "    select tbven.* ";
+                consulta += "        from tbven ";
+                consulta += "    where tbven.vidzona =  "+obj.get("idz");
+            }
+
+            
+            obj.put("data", Dhm.query(consulta));
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
@@ -64,9 +80,9 @@ public class TbVen {
     public static void getVenta(JSONObject obj, SSSessionAbstract session) {
         try {
 
-            JSONArray venta = Dhm.getByKey(COMPONENT, PK, obj.getString("idven"));
+            JSONArray venta = Dhm.getByKey(COMPONENT, PK, obj.get("idven")+"");
 
-            String consulta = "select * from tbvd where idven = "+obj.getString("idven");
+            String consulta = "select * from tbvd where idven = "+obj.get("idven");
             JSONArray ventaDetalle =  Dhm.query(consulta);
 
             venta.getJSONObject(0).put("tvvd", ventaDetalle);
@@ -105,7 +121,7 @@ public class TbVen {
         }
     }
 
-    public static JSONObject registro(int idcli, String vnit, String usumod, String vdet) throws Exception {
+    public static JSONObject registroPedido(int idcli, String vnit, String usumod, String vdet, double vtc) throws Exception {
         
         //generando el vdoc
         JSONArray vdoc = Dhm.getMax("tbven", "vdoc", "where vtipo = 'VD'");
@@ -141,7 +157,7 @@ public class TbVen {
         tbven.put("vtipo", "VD");
         tbven.put("vtog", 0);
         tbven.put("vmoneda", 0);
-        tbven.put("vtc", 6.96);
+        tbven.put("vtc", vtc);
         tbven.put("vnum", ivnum);
         tbven.put("vtipa", 0);
         tbven.put("vdet", vdet);
@@ -180,27 +196,41 @@ public class TbVen {
         //Afecta a las siguientes tablas
         // tbvc - tbven - tbcob - tbsucesos - tbvd
         try{
+
+            double tc = tbTC.getTipoCambioDolares();
+
             JSONObject data = obj.getJSONObject("data");
 
             //Primer creamos la venta maestro
-            JSONObject tbVen = TbVen.registro(data.getInt("idcli"),data.getString("vnit"), obj.getString("usumod"), data.getString("vdet"));
+            JSONObject tbVen = TbVen.registroPedido(data.getInt("idcli"),data.getString("vnit"), obj.getString("usumod"), data.getString("vdet"), tc);
             
             tbVen.put("productos", new JSONArray());
             //Ahora creamos el detalle de la venta
+
+            double vcimp=0;
 
             JSONArray json = new JSONArray();
             JSONObject tbVd;
             for (int i = 0; i < data.getJSONArray("productos").length(); i++) {
                 tbVd = data.getJSONArray("productos").getJSONObject(i);
                 //Solo lo arma
-                tbVd = TbVd.registro(tbVen.getInt("idven"), tbVd.getInt("idprd") ,tbVd.getDouble("vdpre"), tbVd.getDouble("vdcan"), obj.getString("usumod"), tbVd.getString("vdunid"));
+                tbVd = TbVd.registroPedido(tbVen.get("idven")+"", tbVd.getInt("idprd") ,tbVd.getDouble("vdpre"), tbVd.getDouble("vdcan"), obj.getString("usumod"), tbVd.getString("vdunid"), tc);
                 //tbVen.getJSONArray("productos").put(tbVd);
+                vcimp+=tbVd.getDouble("vdcan")*tbVd.getDouble("vdpre");
                 json.put(tbVd);
             }
 
             Dhm.registroAll("tbVd", "idvd", json);
+
+            
+            JSONObject tbCob = TbCob.registroPedido(tbVen.getString("vdoc"), obj.getString("usumod"), tbVen.getInt("idemp"));
+
+            double vcimpus = vcimp/tc;
+
+            TbVc.registroPedido(vcimp, vcimpus, tbVen.getInt("idven"), tbCob.getInt("idcob"), tbVen.getString("vdoc"), obj.getString("usumod"));
+
             //Agregamos el hitorico del evento
-            TbSucesos.registro(tbVen.getInt("idven"), tbVen.get("vdoc")+"", obj.getString("usumod")); 
+            TbSucesos.registroPedido(tbVen.getInt("idven"), tbVen.get("vdoc")+"", obj.getString("usumod")); 
 
             obj.put("estado", "exito");
             obj.put("data", tbVen);

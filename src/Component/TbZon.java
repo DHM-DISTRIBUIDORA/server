@@ -30,7 +30,23 @@ public class TbZon {
 
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
-            obj.put("data", Dhm.getAll(COMPONENT));
+            String consulta = "select tbzon.*, ";
+            consulta += "(";
+            consulta += "    select count(tbven.idven) ";
+            consulta += "        from tbven ";
+            consulta += "    where tbven.vidzona = tbzon.idz ";
+            consulta += "    and tbven.vtipo in ('VD') ";
+            consulta += ") as pedidos, ";
+            consulta += "( ";
+            consulta += "    select count(tbven.idven) ";
+            consulta += "        from tbven ";
+            consulta += "    where tbven.vidzona = tbzon.idz ";
+            consulta += "    and tbven.vtipo in ('VF') ";
+            consulta += ") as ventas ";
+            consulta +="from tbzon";
+            
+            obj.put("data", Dhm.query(consulta));
+
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");

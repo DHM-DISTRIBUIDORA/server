@@ -102,6 +102,45 @@ public class TbCob {
         }
     }
 
+    public static JSONObject registroPedido(String coddoc, String usumod, int idemp) {
+        try {
+
+            JSONObject tbcob = new JSONObject();
+            tbcob.put("idac", 0);
+            //tbcob.put("idcob", 116537);
+            tbcob.put("cobidtg", 0);
+            tbcob.put("cimpus", 0);
+            tbcob.put("bord", 73);
+            tbcob.put("idven", 0);
+            tbcob.put("idcli", 0);
+            tbcob.put("idctabco", 0);
+            tbcob.put("cdoc", "VC-"+coddoc);
+            tbcob.put("cbtc", 0);
+            tbcob.put("cnrocon", "0");
+            tbcob.put("cimp", 0);
+            tbcob.put("cidcen", 0);
+            tbcob.put("cest", 1);
+            tbcob.put("cfec", SUtil.now());
+            tbcob.put("cpagadocon", 4);
+            tbcob.put("sucreg", 0);
+            tbcob.put("fecmod", SUtil.now());
+            tbcob.put("ctipodoc", 0);
+            tbcob.put("cbmoneda", 0);
+            tbcob.put("usumod", usumod);
+            tbcob.put("idiv", 0);
+            tbcob.put("cobcambio", 0);
+            tbcob.put("idemp", idemp);
+            tbcob.put("cdet", "Pago al contado Doc: VD-"+coddoc);
+            tbcob.put("ctipo", 1);
+
+            Dhm.registro(COMPONENT, PK, tbcob);
+            return tbcob;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static void editar(JSONObject obj, SSSessionAbstract session) {
         try {
             JSONObject data = obj.getJSONObject("data");

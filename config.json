@@ -12,11 +12,13 @@
         "reconectTime": 10000
     },
     "files": {
-        "url": "/u01/servisoftsFiles/dhm/"
+        "url": "/u01/servisoftsFiles/dhm/",
+        "url_gpx": "/u01/servisoftsFiles/dhm/gpx/"
     },
     "sqlServerApi":{
-        "url":"http://192.168.2.1:8080/",
+        "__url":"http://10.83.253.250:8080/",
         "_url":"http://181.188.139.50:9091/",
+        "url":"http://192.168.2.1:8080/",
         "apiKey":"servisofts"
     },
     "data_base": {

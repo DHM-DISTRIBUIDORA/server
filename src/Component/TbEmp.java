@@ -30,7 +30,13 @@ public class TbEmp {
 
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
-            obj.put("data", Dhm.getAll(COMPONENT));
+
+            String consulta = "select *, ";
+            consulta += "(select sum(tbvd.vdpre*tbvd.vdcan)  from tbven, tbvd where tbven.vtipo in ('VF') and tbven.idemp = tbemp.idemp and tbvd.idven = tbven.idven) as monto_total_ventas, ";
+            consulta += "(select sum(tbvd.vdpre*tbvd.vdcan)  from tbven, tbvd where tbven.vtipo in ('VD') and tbven.idemp = tbemp.idemp and tbvd.idven = tbven.idven) as monto_total_pedidos ";
+            consulta += "from tbemp";
+
+            obj.put("data", Dhm.query(consulta));
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");

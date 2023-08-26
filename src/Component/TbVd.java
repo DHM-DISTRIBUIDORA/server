@@ -30,7 +30,15 @@ public class TbVd {
 
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
-            obj.put("data", Dhm.getAll(COMPONENT));
+
+            String consulta="select tbvd.* from tbvd";
+            if(obj.has("idven")){
+                consulta = "    select tbvd.* ";
+                consulta += "        from tbvd ";
+                consulta += "    where tbvd.idven =  "+obj.get("idven");
+            }
+
+            obj.put("data", Dhm.query(consulta));
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
@@ -74,9 +82,8 @@ public class TbVd {
         }
     }
 
-    public static JSONObject registro(int idven, int idprd,double vdpre, double vdcan, String usumod, String vdunid) {
+    public static JSONObject registroPedido(String idven, int idprd,double vdpre, double vdcan, String usumod, String vdunid, double tc) {
         try {
-            double tc = 6.96;
             JSONObject tbvd = new JSONObject();
             tbvd.put("vdsercanus", 0);
             tbvd.put("vdanutice", 0);

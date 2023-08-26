@@ -19,6 +19,9 @@ public class TbPrd {
             case "getByKey":
                 getByKey(obj, session);
                 break;
+                case "getProductosVendidos":
+                getProductosVendidos(obj, session);
+                break;
             case "registro":
                 registro(obj, session);
                 break;
@@ -34,6 +37,31 @@ public class TbPrd {
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
             obj.put("data", Dhm.getAll(COMPONENT));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void getProductosVendidos(JSONObject obj, SSSessionAbstract session) {
+        try {
+            obj.put("data", Dhm.query("select sum(tbvd.vdcan) as cantidad,\n" + //
+                    "tbprd.prdnom,\n" + //
+                    "tbvd.idprd,\n" + //
+                    "tbprd.prdcod,\n" + //
+                    "sum(tbvd.vdpre) as monto\n" +
+                    "from tbven,\n" + //
+                    "tbvd,\n" + //
+                    "tbprd\n" + //
+                    "where vtipo = 'VF'\n" + //
+                    "and tbvd.idven = tbven.idven\n" + //
+                    "and tbven.vfec between '"+obj.getString("fecha_inicio")+"' and '"+obj.getString("fecha_fin")+"'\n" + //
+                    "and tbprd.idprd = tbvd.idprd\n" + //
+                    "group by tbprd.prdnom,\n" + //
+                    "tbvd.idprd, tbprd.prdcod")); 
+            
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");

@@ -77,7 +77,7 @@ public class TbVc {
             tbvc.put("sucreg", 0);
             tbvc.put("idven", 77648);
             tbvc.put("vcimp", 4);
-            tbvc.put("fecmod", "2023-07-19 02:22:38.0");
+            tbvc.put("fecmod", SUtil.now());
             tbvc.put("vcidg", 0);
             tbvc.put("vcest", 1);
             tbvc.put("vcimpus", 0.5747126405282259);
@@ -92,6 +92,38 @@ public class TbVc {
             obj.put("estado", "error");
             obj.put("error", e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    public static JSONObject registroPedido(double vcimp, double vcimpus, int idven, int idcob, String vdoc, String usmod) {
+        try {
+
+            JSONObject tbvc = new JSONObject();
+            tbvc.put("vcidcen", 0);
+            tbvc.put("idog", 0);
+            tbvc.put("vctipo", 0);
+            tbvc.put("idpl", 0);
+            tbvc.put("vctc", 1);
+            tbvc.put("vcdet", "Pago al contado Doc: VD-"+vdoc);
+            tbvc.put("idcob", idcob);
+            tbvc.put("vcidcta", 0);
+            tbvc.put("sucreg", 0);
+            tbvc.put("idven", idven);
+            tbvc.put("vcimp", vcimp);
+            tbvc.put("fecmod", SUtil.now());
+            tbvc.put("vcidg", 0);
+            tbvc.put("vcest", 1);
+            tbvc.put("vcimpus", vcimpus);
+            tbvc.put("vcidiv", 0);
+            //tbvc.put("idvc", 117044);
+            tbvc.put("usumod", usmod);
+            tbvc.put("idcmp", 0);
+
+            Dhm.registro(COMPONENT, PK, tbvc);
+            return tbvc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 

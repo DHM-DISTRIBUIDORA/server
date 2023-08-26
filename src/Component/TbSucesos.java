@@ -73,7 +73,7 @@ public class TbSucesos {
         }
     }
 
-    public static JSONObject registro(int idven, String scsnrodoc, String scsusuario) {
+    public static JSONObject registroPedido(int idven, String scsnrodoc, String scsusuario) {
         try {
             JSONObject tbsucesos = new JSONObject();
             tbsucesos.put("scsdetalle", "Registro de ventas");
