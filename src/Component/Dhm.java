@@ -1,5 +1,8 @@
 package Component;
 
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import Servisofts.SConfig;
@@ -42,13 +45,8 @@ public class Dhm {
             "    select count(tbven.idven) "+
             "    from tbven "+
             "    where tbven.idemp = tbemp.idemp "+
-            "    and tbven.vtipo in ('VD') "+
-            ") as  cantidad_pedidos, "+
-            "( "+
-            "    select count(tbven.idven) "+
-            "    from tbven "+
-            "    where tbven.idemp = tbemp.idemp "+
-            "    and tbven.vtipo not in ('VD') "+
+            "    and tbven.vtipo in ('VD', 'VF') "+
+            "    and tbven.vefa not in ('A') "+
             ") as  cantidad_ventas, "+
             "( "+
             "    select count(tbcom.idcom) "+
@@ -56,14 +54,13 @@ public class Dhm {
             "    where tbcom.idemp = tbemp.idemp "+
             ") as  cantidad_compras, ";
 
-            consulta += "(select sum(tbvd.vdpre*tbvd.vdcan)  from tbven, tbvd where tbven.vtipo in ('VF') and tbven.idemp = tbemp.idemp and tbvd.idven = tbven.idven) as monto_total_ventas, ";
-            consulta += "(select sum(tbvd.vdpre*tbvd.vdcan)  from tbven, tbvd where tbven.vtipo in ('VD') and tbven.idemp = tbemp.idemp and tbvd.idven = tbven.idven) as monto_total_pedidos ";
+            consulta += "(select sum(tbvd.vdpre*tbvd.vdcan)  from tbven, tbvd where tbven.vtipo in ('VF', 'VD') and tbven.vefa not in ('A')  and tbven.idemp = tbemp.idemp and tbvd.idven = tbven.idven) as monto_total_ventas ";
 
             consulta += "from tbemp "+
             "where tbemp.idemp = "+obj.get("idemp");
 
             JSONArray data = Http.send_(url, consulta, apiKey);
-            
+
             obj.put("data", data);
             obj.put("estado", "exito");
         } catch (Exception e) {
@@ -219,12 +216,11 @@ public class Dhm {
         names = names.substring(0, names.length()-1);
         values = values.substring(0, values.length()-1);
 
-        String consulta = "insert into "+nombreTabla+" ( "+names+" ) values ( "+values+" ) ";
+        String consulta = "insert into "+nombreTabla+" ( "+names+" ) values ( "+values+" );  SELECT MAX("+PK+") AS curval FROM "+nombreTabla;
         System.out.println(consulta);
         String url = SConfig.getJSON("sqlServerApi").getString("url")+"api/select";
         String apiKey = SConfig.getJSON("sqlServerApi").getString("apiKey");
-        Http.send_(url,  consulta, apiKey);
-        JSONArray last = Http.send_(url,  "SELECT MAX("+PK+") AS curval FROM "+nombreTabla, apiKey);
+        JSONArray last = Http.send_(url,  consulta, apiKey);
         data.put(PK, last.getJSONObject(0).getInt("curval"));
         return true;
 

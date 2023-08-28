@@ -15,6 +15,9 @@ public class TbCli {
             case "getAll":
                 getAll(obj, session);
                 break;
+            case "getByKeys":
+                getByKeys(obj, session);
+                break;
             case "getByKey":
                 getByKey(obj, session);
                 break;
@@ -35,6 +38,9 @@ public class TbCli {
                 break;
             case "getSinPedidos":
                 getSinPedidos(obj, session);
+                break;
+            case "getClientesDia":
+                getClientesDia(obj, session);
                 break;
         }
     }
@@ -71,6 +77,27 @@ public class TbCli {
                     "tbcli.clilon";
 
             obj.put("data", Dhm.query(consulta));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void getClientesDia(JSONObject obj, SSSessionAbstract session) {
+        try {
+
+            String consulta = "select tbcli.* \n" + //
+                    "            from tbzon,\n" + //
+                    "            tbcli\n" + //
+                    "            where tbzon.idemp = "+obj.get("idemp")+" \n" + //
+                    "            and tbzon.zdia = "+obj.get("dia")+"\n" + //
+                    "            and tbcli.idz = tbzon.idz";
+            obj.put("data", Dhm.query(consulta));
+
+            JSONObject visitas = VisitaVendedor.getVisitas(obj.get("idemp")+"", obj.get("fecha")+"");
+            obj.put("visitas", visitas);
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
@@ -120,13 +147,17 @@ public class TbCli {
                 consulta += "    select count(tbven.idven) ";
                 consulta += "        from tbven ";
                 consulta += "    where tbven.idcli = tbcli.idcli ";
-                consulta += "    and tbven.vtipo in ('VD') ";
+                consulta += "    and tbven.vtipo in ('VD', 'VF') ";
+                consulta += "    and tbven.vefa not in ('A')  ";
+                consulta += "    and tbven.idtg is null  ";
                 consulta += ") as pedidos, ";
                 consulta += "( ";
                 consulta += "    select count(tbven.idven) ";
                 consulta += "        from tbven ";
                 consulta += "    where tbven.idcli = tbcli.idcli ";
-                consulta += "    and tbven.vtipo in ('VF') ";
+                consulta += "    and tbven.vtipo in ('VD', 'VF') ";
+                consulta += "    and tbven.vefa not in ('A')  ";
+                consulta += "    and tbven.idtg is not null  ";
                 consulta += ") as ventas ";
                 consulta +="from tbcli where cliidemp = "+obj.get("cliidemp");
                 
@@ -138,15 +169,19 @@ public class TbCli {
                 consulta += "    select count(tbven.idven) ";
                 consulta += "        from tbven ";
                 consulta += "    where tbven.idcli = tbcli.idcli ";
-                consulta += "    and tbven.vtipo in ('VD') ";
+                consulta += "    and tbven.vtipo in ('VD', 'VF') ";
+                consulta += "    and tbven.vefa not in ('A')  ";
+                consulta += "    and tbven.idtg is null  ";
                 consulta += ") as pedidos, ";
                 consulta += "( ";
                 consulta += "    select count(tbven.idven) ";
                 consulta += "        from tbven ";
                 consulta += "    where tbven.idcli = tbcli.idcli ";
-                consulta += "    and tbven.vtipo in ('VF') ";
+                consulta += "    and tbven.vtipo in ('VD', 'VF') ";
+                consulta += "    and tbven.vefa not in ('A')  ";
+                consulta += "    and tbven.idtg is not null  ";
                 consulta += ") as ventas ";
-                consulta += "from tbcli where idz = "+obj.get("idz");
+                consulta += "from tbcli where tbcli.idz = "+obj.get("idz");
                 obj.put("data", Dhm.query(consulta));
             }
             else{
@@ -164,6 +199,29 @@ public class TbCli {
     public static void getByKey(JSONObject obj, SSSessionAbstract session) {
         try {
             obj.put("data", Dhm.getByKey(COMPONENT, PK, obj.getString("key")));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void getByKeys(JSONObject obj, SSSessionAbstract session) {
+        try {
+
+            JSONArray array = obj.getJSONArray("keys");
+
+            String keys = "";
+            for (int i = 0; i < array.length(); i++) {
+                keys += array.get(i)+",";
+            }
+
+            if(keys.length()>0) keys = keys.substring(0, keys.length()-1);
+
+            String consulta = "select * from tbcli where idcli in ("+keys+")";
+
+            obj.put("data", Dhm.query(consulta));
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
@@ -250,13 +308,17 @@ public class TbCli {
             "    select count(tbven.idven) "+
             "    from tbven "+
             "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VD') "+
+            "    and tbven.vtipo in ('VF', 'VD') "+
+            "    and tbven.vefa not in ('A') "+
+            "    and tbven.idtg is null "+
             ") as  cantidad_pedidos, "+
             "( "+
             "    select count(tbven.idven) "+
             "    from tbven "+
             "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF') "+
+            "    and tbven.vtipo in ('VF', 'VD') "+
+            "    and tbven.vefa not in ('A') "+
+            "    and tbven.idtg is not null "+
             ") as  cantidad_ventas, "+
             "( "+
             "select top 1 ventas.monto "+
@@ -266,8 +328,10 @@ public class TbCli {
             "    from tbven,         "+
             "    tbvd         "+
             "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF') "+
+            "    and tbven.vtipo in ('VF', 'VD') "+
+            "    and tbven.vefa not in ('A') "+
             "    and tbvd.idven =  tbven.idven  "+
+            "    and tbven.idtg is not null "+
             "    group by tbven.idven "+
             ") ventas  "+
             "order by ventas.monto desc "+
@@ -280,8 +344,10 @@ public class TbCli {
             "    from tbven,         "+
             "    tbvd         "+
             "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF') "+
+            "    and tbven.vtipo in ('VF', 'VD') "+
+            "    and tbven.vefa not in ('A') "+
             "    and tbvd.idven =  tbven.idven  "+
+            "    and tbven.idtg is not null "+
             "    group by tbven.idven "+
             ") ventas  "+
             "order by ventas.monto asc "+
@@ -290,14 +356,18 @@ public class TbCli {
             "select top 1 tbven.vfec "+
             "    from tbven "+
             "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF') "+
+            "    and tbven.vtipo in ('VF', 'VD') "+
+            "    and tbven.vefa not in ('A') "+
+            "    and tbven.idtg is not null "+
             "    order by tbven.vfec desc "+
             ") as  ultima_venta, "+
             "( "+
             "select top 1 tbven.vfec "+
             "    from tbven "+
             "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF') "+
+            "    and tbven.vtipo in ('VF', 'VD') "+
+            "    and tbven.vefa not in ('A') "+
+            "    and tbven.idtg is not null "+
             "    order by tbven.vfec asc "+
             ") as  primer_venta, ";
 
@@ -305,15 +375,19 @@ public class TbCli {
             consulta += "    select sum(tbvd.vdpre*tbvd.vdcan) ";
             consulta += "        from tbven, tbvd ";
             consulta += "    where tbven.idcli = tbcli.idcli ";
-            consulta += "    and tbven.vtipo in ('VD') ";
+            consulta += "    and tbven.vtipo in ('VF', 'VD') ";
+            consulta += "    and tbven.vefa not in ('A') ";
             consulta += "    and tbven.idven = tbvd.idven ";
+            consulta += "    and tbven.idtg is null  ";
             consulta += ") as monto_total_pedidos, ";
             consulta += "( ";
             consulta += "    select sum(tbvd.vdpre*tbvd.vdcan) ";
             consulta += "        from tbven, tbvd ";
             consulta += "    where tbven.idcli = tbcli.idcli ";
-            consulta += "    and tbven.vtipo in ('VF') ";
+            consulta += "    and tbven.vtipo in ('VF', 'VD') ";
+            consulta += "    and tbven.vefa not in ('A') ";
             consulta += "    and tbven.idven = tbvd.idven ";
+            consulta += "    and tbven.idtg is not null  ";
             consulta += ") as monto_total_ventas ";
 
             consulta +="from tbcli "+

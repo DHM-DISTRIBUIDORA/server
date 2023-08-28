@@ -38,6 +38,8 @@ public class Manejador {
             case TbCli.COMPONENT: TbCli.onMessage(obj, session); break;
             case TbCliTipo.COMPONENT: TbCliTipo.onMessage(obj, session); break;
             case background_location.COMPONENT: background_location.onMessage(obj, session); break;
+            case VisitaVendedor.COMPONENT: VisitaVendedor.onMessage(obj, session); break;
+            case TbTg.COMPONENT: TbTg.onMessage(obj, session); break;
         }
     }
 }

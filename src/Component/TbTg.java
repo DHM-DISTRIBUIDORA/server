@@ -4,9 +4,9 @@ import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
 import Servisofts.SUtil;
 
-public class TbZon {
-    public static final String COMPONENT = "tbzon";
-    public static final String PK = "idz";
+public class TbTg {
+    public static final String COMPONENT = "tbtg";
+    public static final String PK = "idtg";
 
     public static void onMessage(JSONObject obj, SSSessionAbstract session) {
         switch (obj.getString("type")) {
@@ -30,27 +30,8 @@ public class TbZon {
 
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
-            String consulta = "select tbzon.*, ";
-            consulta += "(";
-            consulta += "    select count(tbven.idven) ";
-            consulta += "        from tbven ";
-            consulta += "    where tbven.vidzona = tbzon.idz ";
-            consulta += "    and tbven.vtipo in ('VD', 'VF') ";
-            consulta += "    and tbven.vefa not in ('A')  ";
-            consulta += "    and tbven.idtg is null  ";
-            consulta += ") as pedidos, ";
-            consulta += "( ";
-            consulta += "    select count(tbven.idven) ";
-            consulta += "        from tbven ";
-            consulta += "    where tbven.vidzona = tbzon.idz ";
-            consulta += "    and tbven.vtipo in ('VD', 'VF') ";
-            consulta += "    and tbven.vefa not in ('A')  ";
-            consulta += "    and tbven.idtg is not null  ";
-            consulta += ") as ventas ";
-            consulta +="from tbzon";
-            
+            String consulta = "select * from tbtg where tgest = 'DESPACHADO'";
             obj.put("data", Dhm.query(consulta));
-
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
@@ -84,8 +65,9 @@ public class TbZon {
     public static void registro(JSONObject obj, SSSessionAbstract session) {
         try {
             JSONObject data = obj.getJSONObject("data");
-            data.put("zfecmod", SUtil.now());
+            data.put("fecmod", SUtil.now());
             data.put("usumod", "Prueba");
+            data.put("empest", 1);
 
             Dhm.registro(COMPONENT, PK, data);
             obj.put("estado", "exito");
@@ -99,7 +81,7 @@ public class TbZon {
     public static void editar(JSONObject obj, SSSessionAbstract session) {
         try {
             JSONObject data = obj.getJSONObject("data");
-            data.put("zfecmod", SUtil.now());
+            data.put("fecmod", SUtil.now());
             data.put("usumod", "Prueba");
             Dhm.editar(COMPONENT, PK, data);
             obj.put("estado", "exito");

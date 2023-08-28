@@ -18,7 +18,7 @@
     "sqlServerApi":{
         "__url":"http://10.83.253.250:8080/",
         "_url":"http://181.188.139.50:9091/",
-        "url":"http://192.168.2.1:8080/",
+        "url":"http://192.168.2.2:8080/",
         "apiKey":"servisofts"
     },
     "data_base": {

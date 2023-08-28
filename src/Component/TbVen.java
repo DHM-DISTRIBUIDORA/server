@@ -220,18 +220,27 @@ public class TbVen {
                 json.put(tbVd);
             }
 
+            final double fvcimp = vcimp;
+
             Dhm.registroAll("tbVd", "idvd", json);
 
+            final Thread thread_ = new Thread(){
+                public void run(){
+                    System.out.println("Thread Running");
+
+                    JSONObject tbCob = TbCob.registroPedido(tbVen.getString("vdoc"), obj.getString("usumod"), tbVen.getInt("idemp"));
+
+                    double vcimpus = fvcimp/tc;
+
+                    TbVc.registroPedido(fvcimp, vcimpus, tbVen.getInt("idven"), tbCob.getInt("idcob"), tbVen.getString("vdoc"), obj.getString("usumod"));
+
+                    //Agregamos el hitorico del evento
+                    TbSucesos.registroPedido(tbVen.getInt("idven"), tbVen.get("vdoc")+"", obj.getString("usumod")); 
+                }
+            };
             
-            JSONObject tbCob = TbCob.registroPedido(tbVen.getString("vdoc"), obj.getString("usumod"), tbVen.getInt("idemp"));
-
-            double vcimpus = vcimp/tc;
-
-            TbVc.registroPedido(vcimp, vcimpus, tbVen.getInt("idven"), tbCob.getInt("idcob"), tbVen.getString("vdoc"), obj.getString("usumod"));
-
-            //Agregamos el hitorico del evento
-            TbSucesos.registroPedido(tbVen.getInt("idven"), tbVen.get("vdoc")+"", obj.getString("usumod")); 
-
+            thread_.start();
+            
             obj.put("estado", "exito");
             obj.put("data", tbVen);
         }catch(Exception e){
