@@ -48,9 +48,9 @@ public class TbCli {
 
     public static void getAllPedidos(JSONObject obj, SSSessionAbstract session) {
         try {
-            String consulta = "select \n" + //
-                    "sum(tbvd.vdcan) as cantidad,\n" + //
-                    "sum(tbvd.vdpre) as monto,\n" + //
+            String consulta = "SET DATEFORMAT ymd; select \n" + //
+                    "count(tbven.idven) as cantidad,\n" + //
+                    "sum(tbvd.vdimp) as monto,\n" + //
                     "tbcli.idcli,\n" + //
                     "tbcli.clidir,\n" +
                     "tbcli.clicod,\n" +
@@ -64,7 +64,7 @@ public class TbCli {
                     "and tbvd.idven = tbven.idven\n" + //
                     "and tbvd.vdcan > 0\n" + //
                     "and tbcli.idcli = tbven.idcli\n" + //
-                    "and tbven.vfec between '"+obj.getString("fecha_inicio")+"' and '"+obj.getString("fecha_fin")+"'\n" ; //
+                    "and tbven.vfec between '"+obj.getString("fecha_inicio")+" 00:00:00' and '"+obj.getString("fecha_fin")+" 23:59:59'\n" ; //
                     if(obj.has("idemp")){
                         consulta += "and tbcli.cliidemp = "+obj.get("idemp")+"\n"; //    
                     }
@@ -221,7 +221,7 @@ public class TbCli {
 
             String consulta = "select * from tbcli where idcli in ("+keys+")";
 
-            obj.put("data", Dhm.query(consulta));
+            obj.put("data", Dhm.query (consulta));
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");

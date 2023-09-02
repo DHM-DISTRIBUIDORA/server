@@ -37,26 +37,25 @@ public class TbVen {
 
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
-            String consulta="select tbven.*, (select sum(tbvd) from tbvd where tbvd.idven = tbven.idven ) as monto from tbven";
-            if(obj.has("idcli")){
+            String consulta = "select tbven.*, (select sum(tbvd) from tbvd where tbvd.idven = tbven.idven ) as monto from tbven";
+            if (obj.has("idcli")) {
                 consulta = "    select tbven.* ";
                 consulta += "        from tbven ";
-                consulta += "    where tbven.idcli =  "+obj.get("idcli");
+                consulta += "    where tbven.idcli =  " + obj.get("idcli");
             }
 
-            if(obj.has("idemp")){
+            if (obj.has("idemp")) {
                 consulta = "    select tbven.* ";
                 consulta += "        from tbven ";
-                consulta += "    where tbven.idemp =  "+obj.get("idemp");
+                consulta += "    where tbven.idemp =  " + obj.get("idemp");
             }
 
-            if(obj.has("idz")){
+            if (obj.has("idz")) {
                 consulta = "    select tbven.* ";
                 consulta += "        from tbven ";
-                consulta += "    where tbven.vidzona =  "+obj.get("idz");
+                consulta += "    where tbven.vidzona =  " + obj.get("idz");
             }
 
-            
             obj.put("data", Dhm.query(consulta));
             obj.put("estado", "exito");
         } catch (Exception e) {
@@ -80,10 +79,10 @@ public class TbVen {
     public static void getVenta(JSONObject obj, SSSessionAbstract session) {
         try {
 
-            JSONArray venta = Dhm.getByKey(COMPONENT, PK, obj.get("idven")+"");
+            JSONArray venta = Dhm.getByKey(COMPONENT, PK, obj.get("idven") + "");
 
-            String consulta = "select * from tbvd where idven = "+obj.get("idven");
-            JSONArray ventaDetalle =  Dhm.query(consulta);
+            String consulta = "select * from tbvd where idven = " + obj.get("idven");
+            JSONArray ventaDetalle = Dhm.query(consulta);
 
             venta.getJSONObject(0).put("tvvd", ventaDetalle);
 
@@ -111,7 +110,6 @@ public class TbVen {
         try {
             JSONObject data = obj.getJSONObject("data");
 
-
             Dhm.registro(COMPONENT, PK, data);
             obj.put("estado", "exito");
         } catch (Exception e) {
@@ -121,21 +119,22 @@ public class TbVen {
         }
     }
 
-    public static JSONObject registroPedido(int idcli, String vnit, String usumod, String vdet, double vtc) throws Exception {
-        
-        //generando el vdoc
-        JSONArray vdoc = Dhm.getMax("tbven", "vdoc", "where vtipo = 'VD'");
-        String svdoc = vdoc.getJSONObject(0).getString("max");
-        int ivdoc = Integer.parseInt(svdoc)+1;
+    public static JSONObject registroPedido(int idcli, String vnit, String usumod, String vdet, double vtc)
+            throws Exception {
 
-        //generando el vnum
-        JSONArray vnum = Dhm.getMax("tbven", "vnum", "where vtipo = 'VD'");
-        int ivnum = vnum.getJSONObject(0).getInt("max")+1;
+        // generando el vdoc
+        JSONArray vdoc = Dhm
+                .query("select  MAX(CAST(tbven.vdoc AS INT)) as max  from tbven where tbven.vtipo in ('VD','VF')");
+        // JSONArray vdoc = Dhm.getMax("tbven", "vdoc", "where vtipo = 'VD'");
+        // String svdoc ;
+        int ivdoc = vdoc.getJSONObject(0).getInt("max") + 1;
 
+        // generando el vnum
+        JSONArray vnum = Dhm.getMax("tbven", "vnum", "where vtipo in ('VD', 'VF')");
+        int ivnum = vnum.getJSONObject(0).getInt("max") + 1;
 
-
-        //Buscando el cliente
-        JSONObject tbcli = TbCli.getByKey(idcli+"");
+        // Buscando el cliente
+        JSONObject tbcli = TbCli.getByKey(idcli + "");
 
         JSONObject tbven = new JSONObject();
         tbven.put("vmpimp", 0);
@@ -144,7 +143,7 @@ public class TbVen {
         tbven.put("vanudesfin", 0);
         tbven.put("vdocid", 1);
         tbven.put("vcuoini", 0);
-        //tbven.put("idven", 77648);
+        // tbven.put("idven", 77648);
         tbven.put("idcli", idcli);
         tbven.put("vnit", vnit);
         tbven.put("vemid", 0);
@@ -165,9 +164,9 @@ public class TbVen {
         tbven.put("sucreg", 0);
         tbven.put("vanumpimp", 0);
         tbven.put("fecmod", SUtil.now());
-        tbven.put("vdoc", ivdoc+"");
+        tbven.put("vdoc", "0" + ivdoc + "");
         tbven.put("vncuo", 0);
-        tbven.put("vfec", SUtil.now());
+        tbven.put("vfec", SUtil.now().substring(0, 11)+"00:00:00.000");
         tbven.put("usumod", usumod);
         tbven.put("idemp", tbcli.get("cliidemp"));
         tbven.put("vcon", "0");
@@ -191,32 +190,45 @@ public class TbVen {
         }
     }
 
-    public static void generarNotaEntrega(JSONObject obj, SSSessionAbstract session){
-        //La nota de entrega es una venta que no ha sido entregada ni pagada, como una cotizacion.
-        //Afecta a las siguientes tablas
-        // tbvc - tbven - tbcob - tbsucesos - tbvd
+    public static void generarNotaEntrega(){
         try{
+            
+        }catch(Exception e){
 
-            double tc = tbTC.getTipoCambioDolares();
+        }
+    }
+    
+    public static void generarNotaEntrega(JSONObject obj, SSSessionAbstract session) {
+        // La nota de entrega es una venta que no ha sido entregada ni pagada, como una
+        // cotizacion.
+        // Afecta a las siguientes tablas
+        // tbvc - tbven - tbcob - tbsucesos - tbvd
+        try {
+
+            //double tc = tbTC.getTipoCambioDolares();
+            double tc = 1;
 
             JSONObject data = obj.getJSONObject("data");
 
-            //Primer creamos la venta maestro
-            JSONObject tbVen = TbVen.registroPedido(data.getInt("idcli"),data.getString("vnit"), obj.getString("usumod"), data.getString("vdet"), tc);
-            
-            tbVen.put("productos", new JSONArray());
-            //Ahora creamos el detalle de la venta
+            // Primer creamos la venta maestro
+            JSONObject tbVen = TbVen.registroPedido(data.getInt("idcli"), data.getString("vnit"),
+                    obj.getString("usumod"), data.getString("vdet"), tc);
 
-            double vcimp=0;
+            tbVen.put("productos", new JSONArray());
+            // Ahora creamos el detalle de la venta
+
+            double vcimp = 0;
 
             JSONArray json = new JSONArray();
             JSONObject tbVd;
             for (int i = 0; i < data.getJSONArray("productos").length(); i++) {
                 tbVd = data.getJSONArray("productos").getJSONObject(i);
-                //Solo lo arma
-                tbVd = TbVd.registroPedido(tbVen.get("idven")+"", tbVd.getInt("idprd") ,tbVd.getDouble("vdpre"), tbVd.getDouble("vdcan"), obj.getString("usumod"), tbVd.getString("vdunid"), tc);
-                //tbVen.getJSONArray("productos").put(tbVd);
-                vcimp+=tbVd.getDouble("vdcan")*tbVd.getDouble("vdpre");
+                // Solo lo arma
+                tbVd = TbVd.registroPedido(tbVen.get("idven") + "", tbVd.getInt("idprd"), tbVd.getDouble("vdpre"),
+                        tbVd.getDouble("vdcan"), obj.getString("usumod"), tbVd.getString("vdunid"), tc);
+                // tbVen.getJSONArray("productos").put(tbVd);
+                vcimp += tbVd.getDouble("vdcan") * tbVd.getDouble("vdpre");
+                tbVd.put("vdimp", tbVd.getDouble("vdcan") * tbVd.getDouble("vdpre"));
                 json.put(tbVd);
             }
 
@@ -224,26 +236,28 @@ public class TbVen {
 
             Dhm.registroAll("tbVd", "idvd", json);
 
-            final Thread thread_ = new Thread(){
-                public void run(){
+            final Thread thread_ = new Thread() {
+                public void run() {
                     System.out.println("Thread Running");
 
-                    JSONObject tbCob = TbCob.registroPedido(tbVen.getString("vdoc"), obj.getString("usumod"), tbVen.getInt("idemp"));
+                    JSONObject tbCob = TbCob.registroPedido(tbVen.getString("vdoc"), obj.getString("usumod"),
+                            tbVen.getInt("idemp"));
 
-                    double vcimpus = fvcimp/tc;
+                    double vcimpus = fvcimp / tc;
 
-                    TbVc.registroPedido(fvcimp, vcimpus, tbVen.getInt("idven"), tbCob.getInt("idcob"), tbVen.getString("vdoc"), obj.getString("usumod"));
+                    TbVc.registroPedido(fvcimp, vcimpus, tbVen.getInt("idven"), tbCob.getInt("idcob"),
+                            tbVen.getString("vdoc"), obj.getString("usumod"));
 
-                    //Agregamos el hitorico del evento
-                    TbSucesos.registroPedido(tbVen.getInt("idven"), tbVen.get("vdoc")+"", obj.getString("usumod")); 
+                    // Agregamos el hitorico del evento
+                    TbSucesos.registroPedido(tbVen.getInt("idven"), tbVen.get("vdoc") + "", obj.getString("usumod"));
                 }
             };
-            
+
             thread_.start();
-            
+
             obj.put("estado", "exito");
             obj.put("data", tbVen);
-        }catch(Exception e){
+        } catch (Exception e) {
             obj.put("estado", "error");
             obj.put("error", e.getMessage());
         }

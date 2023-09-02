@@ -15,10 +15,14 @@
         "url": "/u01/servisoftsFiles/dhm/",
         "url_gpx": "/u01/servisoftsFiles/dhm/gpx/"
     },
-    "sqlServerApi":{
+    "sqlServerApi": {
+        "url": "http://181.188.139.50:9091/",
+        "apiKey": "servisofts"
+    },
+    "_sqlServerApi":{
         "__url":"http://10.83.253.250:8080/",
         "_url":"http://181.188.139.50:9091/",
-        "url":"http://192.168.2.2:8080/",
+        "url":"http://192.168.5.49:8080/",
         "apiKey":"servisofts"
     },
     "data_base": {
