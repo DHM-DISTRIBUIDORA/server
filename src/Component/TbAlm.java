@@ -1,12 +1,14 @@
 package Component;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
+import Servisofts.SConfig;
 import Servisofts.SUtil;
 
-public class TbTg {
-    public static final String COMPONENT = "tbtg";
-    public static final String PK = "idtg";
+public class TbAlm {
+    public static final String COMPONENT = "tbalm";
+    public static final String PK = "idalm";
 
     public static void onMessage(JSONObject obj, SSSessionAbstract session) {
         switch (obj.getString("type")) {
@@ -27,11 +29,10 @@ public class TbTg {
                 break;
         }
     }
-
+    
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
-            String consulta = "select * from tbtg where tgest = 'DESPACHADO' and idemp = "+obj.getInt("idemp");
-            obj.put("data", Dhm.query(consulta));
+            obj.put("data", Dhm.getAll(COMPONENT));
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
@@ -48,6 +49,19 @@ public class TbTg {
             obj.put("estado", "error");
             obj.put("error", e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    public static JSONObject getByKey(String key) {
+        try {
+            JSONArray json = Dhm.getByKey(COMPONENT, PK, key);
+            if(json.length()>0){
+                return json.getJSONObject(0);
+            }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -91,7 +105,4 @@ public class TbTg {
             e.printStackTrace();
         }
     }
-
-
-    
 }

@@ -40,6 +40,7 @@ public class Manejador {
             case background_location.COMPONENT: background_location.onMessage(obj, session); break;
             case VisitaVendedor.COMPONENT: VisitaVendedor.onMessage(obj, session); break;
             case TbTg.COMPONENT: TbTg.onMessage(obj, session); break;
+            case TbAlm.COMPONENT: TbAlm.onMessage(obj, session); break;
         }
     }
 }

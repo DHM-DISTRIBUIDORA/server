@@ -20,12 +20,34 @@ public class DmCabFac {
             case "registro":
                 registro(obj, session);
                 break;
+            case "getPedido":
+                getPedido(obj, session);
+                break;
             case "editar":
                 editar(obj, session);
                 break;
             case "eliminar":
                 eliminar(obj, session);
                 break;
+        }
+    }
+
+    public static void getPedido(JSONObject obj, SSSessionAbstract session) {
+        try {
+
+            JSONArray venta = Dhm.getByKey(COMPONENT, PK, obj.get("idven") + "");
+
+            String consulta = "select * from dm_detfac where idven = " + obj.get("idven");
+            JSONArray dm_detfac = Dhm.query(consulta);
+
+            venta.getJSONObject(0).put("dm_detfac", dm_detfac);
+
+            obj.put("data", venta);
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -119,7 +141,7 @@ public class DmCabFac {
 
             Dhm.query(consulta);
 
-            
+            obj.getJSONObject("data").put("idven", idven);
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");

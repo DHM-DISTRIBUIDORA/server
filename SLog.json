@@ -2,7 +2,7 @@
   "Servicios": {
     "roles_permisos": {
       "host": "192.168.5.16:10016",
-      "status": "exito"
+      "status": "desconectado"
     },
     "usuario": {
       "host": "192.168.5.2:10002",
@@ -18,5 +18,5 @@
     "status": "exito"
   },
   "- SLog": "RealTime Log from server Servisofts",
-  "- Fecha": "2023-09-02T01:33:49.000128"
+  "- Fecha": "2023-09-11T22:59:36.000502"
 }

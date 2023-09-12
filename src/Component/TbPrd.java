@@ -55,7 +55,7 @@ public class TbPrd {
                     "from tbven,\n" + //
                     "tbvd,\n" + //
                     "tbprd\n" + //
-                    "where vtipo = 'VF'\n" + //
+                    "where vtipo in ('VF', 'VD')\n" + //
                     "and tbvd.idven = tbven.idven\n" + //
                     "and tbven.vfec between '"+obj.getString("fecha_inicio")+"' and '"+obj.getString("fecha_fin")+"'\n" + //
                     "and tbprd.idprd = tbvd.idprd\n" + //
@@ -71,6 +71,12 @@ public class TbPrd {
     }
 
     public static void getAllSimple(JSONObject obj, SSSessionAbstract session) {
+
+        String almacen = "";
+        if(obj.has("idalm") && !obj.isNull("idalm")){
+            almacen = " where idalm = "+obj.get("idalm")+" ";
+        }
+
         try {
             String consulta = "SELECT tbprd.prdcod, "+
             "tbprd.prduxcdes, "+
@@ -84,7 +90,7 @@ public class TbPrd {
             "tbprd.prdnom, "+
             "coalesce(sq1.stock, 0 ) as stock "+
             "FROM "+
-            "tbprd LEFT JOIN ( "+
+            "tbprd  JOIN ( "+
             "SELECT  tbprd.idprd, "+
             "compras.cantidad-ventas.cantidad as stock "+
             "FROM  "+
@@ -92,14 +98,14 @@ public class TbPrd {
             "select SUM(tbvd.vdcan) as cantidad, "+
             "tbvd.idprd "+
             "from tbvd JOIN tbven on tbvd.idven = tbven.idven "+
-            "where  tbvd.idalm = 1 "+
+            ""+almacen+
             "group by tbvd.idprd "+
             ") ventas, "+
             "( "+
             "select SUM(tbcd.cdcan) as cantidad, "+
             "tbcd.idprd "+
             "from tbcd  "+
-            "where tbcd.idalm = 1 "+
+            " "+almacen+" "+
             "group by tbcd.idprd "+
             ") compras, "+
             "tbprd "+
