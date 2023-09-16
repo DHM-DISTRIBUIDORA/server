@@ -47,7 +47,11 @@ public class TbZon {
             consulta += "    and tbven.vefa not in ('A')  ";
             consulta += "    and tbven.idtg is not null  ";
             consulta += ") as ventas ";
-            consulta +="from tbzon";
+            consulta +="from tbzon ";
+
+            if(obj.has("idemp") && !obj.isNull("idemp")){
+                consulta += "where idemp = "+obj.get("idemp");
+            }
             
             obj.put("data", Dhm.query(consulta));
 

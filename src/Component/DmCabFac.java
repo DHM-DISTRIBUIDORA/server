@@ -23,6 +23,9 @@ public class DmCabFac {
             case "getPedido":
                 getPedido(obj, session);
                 break;
+            case "getPedidos":
+                getPedidos(obj, session);
+                break;
             case "editar":
                 editar(obj, session);
                 break;
@@ -43,6 +46,82 @@ public class DmCabFac {
             venta.getJSONObject(0).put("dm_detfac", dm_detfac);
 
             obj.put("data", venta);
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static JSONObject agregarVenta(JSONArray ventas, JSONArray detalle){
+        JSONObject ventas_ = new JSONObject();
+        JSONObject venta;
+        for (int i = 0; i < ventas.length(); i++) {
+            venta = ventas.getJSONObject(i);
+
+            for (int j = 0; j < detalle.length(); j++) {
+                if(detalle.getJSONObject(j).get("idven").equals(venta.get("idven"))){
+                    if(!venta.has("detalle")){
+                        venta.put("detalle", new JSONArray().put(detalle.getJSONObject(j)));  
+                        detalle.remove(j);
+                        j--;
+                        continue;
+                    }
+                    venta.getJSONArray("detalle").put(detalle.getJSONObject(j));  
+                    detalle.remove(j);
+                    j--;
+                }
+            }
+
+            ventas_.put(venta.get("idven")+"", venta);
+        }
+        return ventas_;
+    }
+
+    public static void getPedidos(JSONObject obj, SSSessionAbstract session) {
+        try {
+
+            String consulta = "";
+            
+            if(obj.has("idcli") && !obj.isNull("idcli")){
+                consulta = "select dm_cabfac.*\n" + //
+                    "from dm_cabfac,\n" + //
+                    "tbcli\n" + //
+                    "where tbcli.clicod = dm_cabfac.clicod\n" + //
+                    "and tbcli.idcli = "+obj.get("idcli")+"\n"+ 
+                    "order by idven desc";
+            }
+            
+            if(obj.has("idemp") && !obj.isNull("idemp")){
+                consulta = "select dm_cabfac.*\n" + //
+                    "from dm_cabfac,\n" + //
+                    "tbemp\n" + //
+                    "where tbemp.empcod = dm_cabfac.codvendedor\n" + //
+                    "and tbemp.idemp = "+obj.get("idemp")+"\n"+ 
+                    "order by idven desc";
+            }
+
+            JSONArray dm_cabfac = Dhm.query(consulta);
+
+            String idVentas = "";
+            for (int i = 0; i < dm_cabfac.length(); i++) {
+                idVentas+=dm_cabfac.getJSONObject(i).get("idven")+",";
+            }
+            idVentas=idVentas.length()>0?idVentas.substring(0, idVentas.length()-1):"";
+
+
+            consulta = "select * from dm_detfac where idven in ("+idVentas+") order by idven desc";
+            JSONArray dm_detfac = Dhm.query(consulta);
+
+            //buscador detalle 
+            JSONObject ventas = agregarVenta(dm_cabfac, dm_detfac);
+            
+        
+
+            //venta.getJSONObject(0).put("dm_detfac", dm_detfac);
+
+            obj.put("data", ventas);
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
