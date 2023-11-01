@@ -1,5 +1,9 @@
 {
   "Servicios": {
+    "notification": {
+      "host": "192.168.5.33:10033",
+      "status": "exito"
+    },
     "roles_permisos": {
       "host": "192.168.5.16:10016",
       "status": "exito"
@@ -18,5 +22,5 @@
     "status": "exito"
   },
   "- SLog": "RealTime Log from server Servisofts",
-  "- Fecha": "2023-09-15T21:21:52.000394"
+  "- Fecha": "2023-10-31T15:09:42.000039"
 }

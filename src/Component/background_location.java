@@ -1,5 +1,10 @@
 package Component;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.UUID;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
 import Servisofts.SConsole;
@@ -18,9 +23,59 @@ public class background_location {
             case "getAll":
                 getAll(obj, session);
                 break;
+            case "uploadChanges":
+                uploadChanges(obj, session);
+                break;
             case "getByKey":
                 getByKey(obj, session);
                 break;
+        }
+    }
+
+    public static void uploadChanges(JSONObject obj, SSSessionAbstract session) {
+        try {
+            // insertando datos nuevos
+
+            if (obj.has("insert") && !obj.isNull("insert") && obj.getJSONArray("insert").length() > 0) {
+
+                for (int i = 0; i < obj.getJSONArray("insert").length(); i++) {
+                    
+                    JSONObject location = SPGConect.ejecutarConsultaObject("select get_by('" + COMPONENT + "','key_usuario','"
+                        + obj.getString("key_usuario") + "') as json");
+
+
+                    if (location== null || !location.has("key")) {
+                        location.put("key", SUtil.uuid());
+                        location.put("fecha_on", obj.getJSONArray("insert").getJSONObject(i).get("fecha_on"));
+                        location.put("estado", 1);
+                        location.put("key_usuario", obj.getString("key_usuario"));
+                        SPGConect.insertObject("background_location", location);
+                    }
+                    if (obj.getJSONArray("insert").getJSONObject(i).has("tipo")) {
+                        JSONObject data = obj.getJSONArray("insert").getJSONObject(i);
+                        String tipo = data.getString("tipo");
+                        if (tipo.equals("start") || tipo.equals("stop")) {
+                            location.put("tipo", tipo);
+                            SPGConect.insertObject("location_info", new JSONObject(location.toString()).put("key", SUtil.uuid()).put("fecha_on", data.get("fecha_on")));
+                        } else {
+                            location.put("latitude", data.getDouble("latitude"));
+                            location.put("longitude", data.getDouble("longitude"));
+                            Date fecha = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(data.getString("fecha_on"));
+                            GPX.saveGPX(obj.getString("key_usuario"), data.getDouble("latitude"), data.getDouble("longitude"), data.getDouble("rotation"), fecha);
+                        }
+                        location.put("fecha_last", SUtil.now());
+                    }
+                    SPGConect.editObject("background_location", location);
+
+                }
+              //  SPGConect.insertArray(COMPONENT, obj.getJSONArray("insert"));
+            }
+
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
         }
     }
 

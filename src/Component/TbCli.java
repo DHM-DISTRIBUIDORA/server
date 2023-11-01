@@ -9,6 +9,7 @@ import Servisofts.SUtil;
 public class TbCli {
     public static final String COMPONENT = "tbcli";
     public static final String PK = "idcli";
+    public static final String selecttbcli = " idcli,clicod,clinom,cliape, clirazon, clidir,clicel,clinit,clitel,clifax, cliemail,tbcli.idz,idcat,usumod ,fecmod,clilat,clilon ";
 
     public static void onMessage(JSONObject obj, SSSessionAbstract session) {
         switch (obj.getString("type")) {
@@ -20,6 +21,15 @@ public class TbCli {
                 break;
             case "getByKey":
                 getByKey(obj, session);
+                break;
+            case "getByCode":
+                getByCode(obj, session);
+                break;
+            case "uploadChanges":
+                uploadChanges(obj, session);
+                break;
+            case "save":
+                save(obj, session);
                 break;
             case "registro":
                 registro(obj, session);
@@ -33,6 +43,9 @@ public class TbCli {
             case "getPerfil":
                 getPerfil(obj, session);
                 break;
+            case "validarTelefono":
+                validarTelefono(obj, session);
+                break;
             case "getAllPedidos":
                 getAllPedidos(obj, session);
                 break;
@@ -45,30 +58,36 @@ public class TbCli {
         }
     }
 
-
     public static void getAllPedidos(JSONObject obj, SSSessionAbstract session) {
         try {
             String consulta = "SET DATEFORMAT ymd; select \n" + //
-                    "count(tbven.idven) as cantidad,\n" + //
-                    "sum(tbvd.vdimp) as monto,\n" + //
+                    "count(dm_detfac.vdcan) as cantidad,\n" + //
+                    "sum(dm_detfac.vdpre) as monto,\n" + //
                     "tbcli.idcli,\n" + //
                     "tbcli.clidir,\n" +
                     "tbcli.clicod,\n" +
                     "tbcli.clinom,\n" + //
                     "tbcli.clilat,\n" + //
                     "tbcli.clilon\n" + //
-                    "from tbven,\n" + //
-                    "tbvd,\n" + //
-                    "tbcli\n" + //
-                    "where tbven.vtipo = 'VD'\n" + //
-                    "and tbvd.idven = tbven.idven\n" + //
-                    "and tbvd.vdcan > 0\n" + //
-                    "and tbcli.idcli = tbven.idcli\n" + //
-                    "and tbven.vfec between '"+obj.getString("fecha_inicio")+" 00:00:00' and '"+obj.getString("fecha_fin")+" 23:59:59'\n" ; //
-                    if(obj.has("idemp")){
-                        consulta += "and tbcli.cliidemp = "+obj.get("idemp")+"\n"; //    
-                    }
-                    consulta += "group by \n" + //
+                    "from tbcli,\n" + //
+                    "dm_cabfac,\n" + //
+                    "dm_detfac,\n" + //
+                    "tbemp\n" + //
+                    "where  dm_detfac.idven = dm_cabfac.idven \n" +
+                    "and dm_detfac.vdcan > 0 \n" +
+                    "and tbcli.clicod = dm_cabfac.clicod \n" +
+                    "and dm_cabfac.vfec between '" + obj.getString("fecha_inicio") + "' and '"
+                    + obj.getString("fecha_fin") + "' \n" +
+                    "and tbemp.empcod = dm_cabfac.codvendedor \n" +
+                    "    and dm_cabfac.idven not in (\n" +
+                    "    select dm_cabfac.idven\n" +
+                    "    from dm_cabfac,\n" +
+                    "    tbven\n" +
+                    "    where tbven.idpeddm = dm_cabfac.idven)\n";
+            if (obj.has("idemp")) {
+                consulta += "and tbemp.idemp = " + obj.get("idemp") + "\n"; //
+            }
+            consulta += "group by \n" + //
                     "tbcli.clinom,\n" + //
                     "tbcli.clilat,\n" + //
                     "tbcli.idcli,\n" + //
@@ -91,14 +110,206 @@ public class TbCli {
             String consulta = "select tbcli.* \n" + //
                     "            from tbzon,\n" + //
                     "            tbcli\n" + //
-                    "            where tbzon.idemp = "+obj.get("idemp")+" \n" + //
-                    "            and tbzon.zdia = "+obj.get("dia")+"\n" + //
+                    "            where tbzon.idemp = " + obj.get("idemp") + " \n" + //
+                    "            and tbzon.zdia = " + obj.get("dia") + "\n" + //
                     "            and tbcli.idz = tbzon.idz";
             obj.put("data", Dhm.query(consulta));
 
-            JSONObject visitas = VisitaVendedor.getVisitas(obj.get("idemp")+"", obj.get("fecha")+"");
+            JSONObject visitas = VisitaVendedor.getVisitas(obj.get("idemp") + "", obj.get("fecha") + "");
             obj.put("visitas", visitas);
             obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void uploadChanges(JSONObject obj, SSSessionAbstract session) {
+        try {
+            // insertando datos nuevos
+
+            if (obj.has("insert") && !obj.isNull("insert") && obj.getJSONArray("insert").length() > 0) {
+
+                JSONObject cantCliZonas = new JSONObject();
+
+                JSONArray arr = Dhm.query("select max(" + PK + ") as id from " + COMPONENT);
+                int id = arr.getJSONObject(0).getInt("id");
+                JSONObject tbcli;
+
+                for (int i = 0; i < obj.getJSONArray("insert").length(); i++) {
+                    id++;
+                    tbcli = obj.getJSONArray("insert").getJSONObject(i);
+                    tbcli.put(PK, id);
+                    if (tbcli.has("idz") && !tbcli.isNull("idz")) {
+
+                        if (!cantCliZonas.has(tbcli.get("idz") + "") && cantCliZonas.isNull(tbcli.get("idz") + "")) {
+
+                            String consulta = "select tabla.cant,\n" + //
+                                    " tabla.znom\n" + //
+                                    "from (\n" + //
+                                    "select tbzon.znom,\n" + //
+                                    "count(idcli) as cant\n" + //
+                                    "from tbcli,\n" + //
+                                    "tbzon\n" + //
+                                    "where tbzon.idz = " + tbcli.get("idz") + "\n" + //
+                                    "and tbzon.idz = tbcli.idz\n" + //
+                                    "group by tbzon.znom\n" + //
+                                    ") tabla";
+                            JSONArray clicods = Dhm.query(consulta);
+
+                            cantCliZonas.put(tbcli.get("idz") + "", clicods.getJSONObject(0));
+                        }
+
+                        cantCliZonas.getJSONObject(tbcli.get("idz") + "").put("cant",
+                                cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+
+                        tbcli.put("clicod", cantCliZonas.getJSONObject(tbcli.get("idz") + "").getString("znom") + " - "
+                                + cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+                    }
+                }
+                Dhm.registroAll(COMPONENT, PK, obj.getJSONArray("insert"));
+            }
+
+            // Editar
+            if (obj.has("update") && !obj.isNull("update") && obj.getJSONArray("update").length() > 0) {
+                Dhm.editarAll(COMPONENT, PK, obj.getJSONArray("update"));
+            }
+
+            // Eliminar
+            if (obj.has("delete") && !obj.isNull("delete") && obj.getJSONArray("delete").length() > 0) {
+                JSONArray del_ = new JSONArray();
+                for (int i = 0; i < obj.getJSONArray("delete").length(); i++) {
+                    del_.put(obj.getJSONArray("delete").getJSONObject(i).get(PK));
+                }
+                Dhm.eliminarAll(COMPONENT, PK, del_);
+            }
+
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void save(JSONObject obj, SSSessionAbstract session) {
+        try {
+            // insertando datos nuevos
+
+            if (obj.has("data") && !obj.isNull("data")) {
+
+                switch(obj.getJSONObject("data").getString("sync_type")){
+                    case "insert":{
+                        JSONObject cantCliZonas = new JSONObject();
+                        JSONArray arr = Dhm.query("select max(" + PK + ") as id from " + COMPONENT);
+                        int id = arr.getJSONObject(0).getInt("id");
+                        JSONObject tbcli = obj.getJSONObject("data");
+                        id++;
+                        tbcli.put(PK, id);
+                        if (tbcli.has("idz") && !tbcli.isNull("idz")) {
+
+                            if (!cantCliZonas.has(tbcli.get("idz") + "") && cantCliZonas.isNull(tbcli.get("idz") + "")) {
+
+                                String consulta = "select tabla.cant,\n" + //
+                                        " tabla.znom\n" + //
+                                        "from (\n" + //
+                                        "select tbzon.znom,\n" + //
+                                        "count(idcli) as cant\n" + //
+                                        "from tbcli,\n" + //
+                                        "tbzon\n" + //
+                                        "where tbzon.idz = " + tbcli.get("idz") + "\n" + //
+                                        "and tbzon.idz = tbcli.idz\n" + //
+                                        "group by tbzon.znom\n" + //
+                                        ") tabla";
+                                JSONArray clicods = Dhm.query(consulta);
+
+                                cantCliZonas.put(tbcli.get("idz") + "", clicods.getJSONObject(0));
+                            }
+
+                            cantCliZonas.getJSONObject(tbcli.get("idz") + "").put("cant",
+                                    cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+
+                            tbcli.put("clicod", cantCliZonas.getJSONObject(tbcli.get("idz") + "").getString("znom") + " - "
+                                    + cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+                        }
+                        Dhm.registro(COMPONENT, PK, obj.getJSONObject("data"));
+
+                        obj.getJSONObject("data").remove("sync_type");
+                        obj.put("estado", "exito");
+                        obj.put("data", obj.getJSONObject("data"));
+                        return;
+                    }
+                    case "update":{
+                        Dhm.editar(COMPONENT, PK, obj.getJSONObject("data"));
+                        obj.getJSONObject("data").remove("sync_type");
+                        obj.put("estado", "exito");
+                        obj.put("data", obj.getJSONObject("data"));
+                        return;
+                    }
+                    case "delete":{
+                        Dhm.eliminar(COMPONENT, PK, obj.getJSONObject("data").get(PK)+"");
+                        obj.getJSONObject("data").remove("sync_type");
+                        obj.put("estado", "exito");
+                        obj.put("data", obj.getJSONObject("data"));
+                        return;
+                    }
+                }
+            }
+
+
+            obj.put("estado", "error");
+            obj.put("error", "No existe data");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void validarTelefono(JSONObject obj, SSSessionAbstract session) {
+        try {
+
+            String consulta = "select tbcli.* \n" + //
+                    "            from tbcli\n" + //
+                    "            where tbcli.idcli = " + obj.get("idcli");
+
+            JSONArray clientes = Dhm.query(consulta);
+            if (clientes.length() == 0) {
+                obj.put("error", "No existe el codigo de cliente.");
+                obj.put("estado", "error");
+                return;
+            }
+
+            JSONObject tbcli = clientes.getJSONObject(0);
+
+            if (tbcli == null) {
+                // Error al introducir el telefono
+                obj.put("error", "No existe el cliente.");
+                obj.put("estado", "error");
+                return;
+            }
+
+            if (tbcli.get("clitel").equals("0")) {
+                // El telefono del cliente es 0
+                tbcli.put("clitel", obj.get("clitel"));
+                consulta = "update tbcli set clitel = '" + obj.get("clitel") + "' where idcli = " + obj.getInt("idcli");
+                Dhm.query(consulta);
+                obj.put("cliente", tbcli);
+                obj.put("estado", "exito");
+                return;
+            }
+
+            if (!tbcli.get("clitel").equals(obj.get("clitel"))) {
+                // Error al introducir el telefono
+                obj.put("error", "Error al introducir el teléfono.");
+                obj.put("estado", "error");
+                return;
+            }
+
+            obj.put("cliente", tbcli);
+            obj.put("estado", "exito");
+
         } catch (Exception e) {
             obj.put("estado", "error");
             obj.put("error", e.getMessage());
@@ -115,21 +326,31 @@ public class TbCli {
                     "tbcli.clilat,\n" + //
                     "tbcli.clilon\n" + //
                     "from tbcli\n" + //
-                    "where tbcli.cliidemp = 52\n" + //
+                    "where tbcli.cliidemp = " + obj.get("idemp") + "\n" + //
                     "and tbcli.idcli not in (\n" + //
-                    "\tselect \n" + //
-                    "tbcli.idcli\n" + //
-                    "from tbven,\n" + //
-                    "tbvd,\n" + //
-                    "tbcli\n" + //
-                    "where tbven.vtipo = 'VD'\n" + //
-                    "and tbvd.idven = tbven.idven\n" + //
-                    "and tbvd.vdcan > 0\n" + //
-                    "and tbcli.idcli = tbven.idcli\n" + //
-                    "and tbven.vfec between '"+obj.getString("fecha_inicio")+"' and '"+obj.getString("fecha_fin")+"'\n"+ //
-                    "and tbcli.cliidemp = "+obj.get("idemp")+"\n" + //
-                    "group by \n" + //
-                    "tbcli.idcli\n" + //
+
+                    "select  \n" +
+                    "tbcli.idcli \n" +
+                    "from  \n" +
+                    "tbcli, \n" +
+                    "dm_cabfac, \n" +
+                    "dm_detfac, \n" +
+                    "tbemp \n" +
+                    "where  dm_detfac.idven = dm_cabfac.idven \n" +
+                    "and dm_detfac.vdcan > 0 \n" +
+                    "and tbcli.clicod = dm_cabfac.clicod \n" +
+                    "and dm_cabfac.vfec between '" + obj.getString("fecha_inicio") + "' and '"
+                    + obj.getString("fecha_fin") + "'\n" + //
+                    "and tbemp.empcod = dm_cabfac.codvendedor \n" +
+                    "and tbemp.idemp =  " + obj.get("idemp") + "\n" + //
+                    "and dm_cabfac.idven not in (\n" +
+                    "    select dm_cabfac.idven\n" +
+                    "    from dm_cabfac,\n" +
+                    "    tbven\n" +
+                    "    where tbven.idpeddm = dm_cabfac.idven)\n" +
+                    "group by  \n" +
+                    "tbcli.idcli \n" +
+
                     ")"));
             obj.put("estado", "exito");
         } catch (Exception e) {
@@ -138,53 +359,23 @@ public class TbCli {
             e.printStackTrace();
         }
     }
+
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
-            
-            if(obj.has("cliidemp")){
-                String consulta = "select tbcli.*, ";
-                consulta += "(";
-                consulta += "    select count(tbven.idven) ";
-                consulta += "        from tbven ";
-                consulta += "    where tbven.idcli = tbcli.idcli ";
-                consulta += "    and tbven.vtipo in ('VD', 'VF') ";
-                consulta += "    and tbven.vefa not in ('A')  ";
-                consulta += "    and tbven.idtg is null  ";
-                consulta += ") as pedidos, ";
-                consulta += "( ";
-                consulta += "    select count(tbven.idven) ";
-                consulta += "        from tbven ";
-                consulta += "    where tbven.idcli = tbcli.idcli ";
-                consulta += "    and tbven.vtipo in ('VD', 'VF') ";
-                consulta += "    and tbven.vefa not in ('A')  ";
-                consulta += "    and tbven.idtg is not null  ";
-                consulta += ") as ventas ";
-                consulta +="from tbcli where cliidemp = "+obj.get("cliidemp");
-                
+
+            if (obj.has("cliidemp")) {
+                String consulta = "select "+selecttbcli+"";              
+                consulta += "from tbcli, tbzon where tbzon.idz = tbcli.idz and tbzon.idemp = " + obj.get("cliidemp");
 
                 obj.put("data", Dhm.query(consulta));
-            }else if(obj.has("idz")){
-                String consulta = "select tbcli.*, ";
-                consulta += "(";
-                consulta += "    select count(tbven.idven) ";
-                consulta += "        from tbven ";
-                consulta += "    where tbven.idcli = tbcli.idcli ";
-                consulta += "    and tbven.vtipo in ('VD', 'VF') ";
-                consulta += "    and tbven.vefa not in ('A')  ";
-                consulta += "    and tbven.idtg is null  ";
-                consulta += ") as pedidos, ";
-                consulta += "( ";
-                consulta += "    select count(tbven.idven) ";
-                consulta += "        from tbven ";
-                consulta += "    where tbven.idcli = tbcli.idcli ";
-                consulta += "    and tbven.vtipo in ('VD', 'VF') ";
-                consulta += "    and tbven.vefa not in ('A')  ";
-                consulta += "    and tbven.idtg is not null  ";
-                consulta += ") as ventas ";
-                consulta += "from tbcli where tbcli.idz = "+obj.get("idz");
+            } else if (obj.has("idz")) {
+                String consulta = "select "+selecttbcli+" ";
+                consulta += "from tbcli where tbcli.idz = " + obj.get("idz");
                 obj.put("data", Dhm.query(consulta));
-            }
-            else{
+            } else if (obj.has("fecmod")) {
+                obj.put("data",
+                        Dhm.query("select * from tbcli where tbcli.fecmod > '" + obj.getString("fecmod") + "'"));
+            } else {
                 obj.put("data", Dhm.getAll(COMPONENT));
             }
 
@@ -207,6 +398,17 @@ public class TbCli {
         }
     }
 
+    public static void getByCode(JSONObject obj, SSSessionAbstract session) {
+        try {
+            obj.put("data", Dhm.getByKey(COMPONENT, PK, obj.getString("code")));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            // e.printStackTrace();
+        }
+    }
+
     public static void getByKeys(JSONObject obj, SSSessionAbstract session) {
         try {
 
@@ -214,25 +416,32 @@ public class TbCli {
 
             String keys = "";
             for (int i = 0; i < array.length(); i++) {
-                keys += array.get(i)+",";
+                keys += array.get(i) + ",";
             }
 
-            if(keys.length()>0) keys = keys.substring(0, keys.length()-1);
+            if (keys.length() > 0){
+                keys = keys.substring(0, keys.length() - 1);
+                String consulta = "select * from tbcli where idcli in (" + keys + ")";
 
-            String consulta = "select * from tbcli where idcli in ("+keys+")";
+                obj.put("data", Dhm.query(consulta));
+                obj.put("estado", "exito");
+                return;
+            }
+                
+            obj.put("data", "sin keys");
+            obj.put("estado", "error");
 
-            obj.put("data", Dhm.query (consulta));
-            obj.put("estado", "exito");
+            
         } catch (Exception e) {
             obj.put("estado", "error");
             obj.put("error", e.getMessage());
             e.printStackTrace();
         }
     }
-    
+
     public static void getByKeyEmpleado(JSONObject obj, SSSessionAbstract session) {
         try {
-            String consulta = "select * from tbcli where cliidemp = "+obj.get("key");
+            String consulta = "select * from tbcli where cliidemp = " + obj.get("key");
             obj.put("data", Dhm.query(consulta));
             obj.put("estado", "exito");
         } catch (Exception e) {
@@ -245,7 +454,7 @@ public class TbCli {
     public static JSONObject getByKey(String key) {
         try {
             JSONArray json = Dhm.getByKey(COMPONENT, PK, key);
-            if(json.length()>0){
+            if (json.length() > 0) {
                 return json.getJSONObject(0);
             }
             return null;
@@ -269,8 +478,30 @@ public class TbCli {
     public static void registro(JSONObject obj, SSSessionAbstract session) {
         try {
             JSONObject data = obj.getJSONObject("data");
+
             data.put("fecmod", SUtil.now());
-            data.put("usumod", "Prueba");
+
+            String consulta = "select tabla.cant,\n" + //
+                    " tabla.znom\n" + //
+                    "from (\n" + //
+                    "select tbzon.znom,\n" + //
+                    "count(idcli) as cant\n" + //
+                    "from tbcli,\n" + //
+                    "tbzon\n" + //
+                    "where tbzon.idz = " + data.get("idz") + "\n" + //
+                    "and tbzon.idz = tbcli.idz\n" + //
+                    "group by tbzon.znom\n" + //
+                    ") tabla";
+            JSONArray clicods = Dhm.query(consulta);
+
+            JSONObject clicod = clicods.getJSONObject(0);
+            int cant = clicod.getInt("cant");
+            cant++;
+
+            String sclicod = clicod.getString("znom") + "-" + cant;
+
+            data.put("clicod", sclicod);
+            data.put("usumod", "");
             data.put("empest", 1);
 
             Dhm.registro(COMPONENT, PK, data);
@@ -295,81 +526,47 @@ public class TbCli {
             e.printStackTrace();
         }
     }
+
     public static void getPerfil(JSONObject obj, SSSessionAbstract session) {
         try {
-            String url = SConfig.getJSON("sqlServerApi").getString("url")+"api/select";
-            String apiKey = SConfig.getJSON("sqlServerApi").getString("apiKey");
 
+            String consulta = "" +
 
-            String consulta = ""+
-
-            "select tbcli.idcli, "+
-            "( "+
-            "    select count(tbven.idven) "+
-            "    from tbven "+
-            "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF', 'VD') "+
-            "    and tbven.vefa not in ('A') "+
-            "    and tbven.idtg is null "+
-            ") as  cantidad_pedidos, "+
-            "( "+
-            "    select count(tbven.idven) "+
-            "    from tbven "+
-            "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF', 'VD') "+
-            "    and tbven.vefa not in ('A') "+
-            "    and tbven.idtg is not null "+
-            ") as  cantidad_ventas, "+
-            "( "+
-            "select top 1 ventas.monto "+
-            "from ( "+
-            "    select sum(tbvd.vdpreus*tbvd.vdcan) as monto "+
-//            "    tbven.idven "+
-            "    from tbven,         "+
-            "    tbvd         "+
-            "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF', 'VD') "+
-            "    and tbven.vefa not in ('A') "+
-            "    and tbvd.idven =  tbven.idven  "+
-            "    and tbven.idtg is not null "+
-            "    group by tbven.idven "+
-            ") ventas  "+
-            "order by ventas.monto desc "+
-            ") as  maxima_venta, "+
-            "( "+
-            "select top 1 ventas.monto "+
-            "from ( "+
-            "    select sum(tbvd.vdpreus*tbvd.vdcan) as monto "+
-//            "    tbven.idven "+
-            "    from tbven,         "+
-            "    tbvd         "+
-            "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF', 'VD') "+
-            "    and tbven.vefa not in ('A') "+
-            "    and tbvd.idven =  tbven.idven  "+
-            "    and tbven.idtg is not null "+
-            "    group by tbven.idven "+
-            ") ventas  "+
-            "order by ventas.monto asc "+
-            ") as  minima_venta, "+
-            "( "+
-            "select top 1 tbven.vfec "+
-            "    from tbven "+
-            "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF', 'VD') "+
-            "    and tbven.vefa not in ('A') "+
-            "    and tbven.idtg is not null "+
-            "    order by tbven.vfec desc "+
-            ") as  ultima_venta, "+
-            "( "+
-            "select top 1 tbven.vfec "+
-            "    from tbven "+
-            "    where tbven.idcli = tbcli.idcli "+
-            "    and tbven.vtipo in ('VF', 'VD') "+
-            "    and tbven.vefa not in ('A') "+
-            "    and tbven.idtg is not null "+
-            "    order by tbven.vfec asc "+
-            ") as  primer_venta, ";
+                    "select tbcli.idcli, " +
+                    "( " +
+                    "    select count(dm_cabfac.idven) " +
+                    "    from dm_cabfac  " +
+                    "    where  dm_cabfac.clicod = tbcli.clicod     " +
+                    "    and dm_cabfac.vfec between '" + obj.getString("fecha_inicio") + "' and '"
+                    + obj.getString("fecha_fin") + "'\n" +
+                    "    and dm_cabfac.idven not in (\n" +
+                    "    select dm_cabfac.idven\n" +
+                    "    from dm_cabfac,\n" +
+                    "    tbven\n" +
+                    "    where tbven.idpeddm = dm_cabfac.idven)\n" +
+                    ") as  cantidad_pedidos, \n" +
+                    "( " +
+                    "    select sum(dm_detfac.vdpre*dm_detfac.vdcan)" +
+                    "    from dm_cabfac, dm_detfac  " +
+                    "    where  dm_cabfac.clicod = tbcli.clicod     " +
+                    "    and  dm_cabfac.idven = dm_detfac.idven " +
+                    "    and dm_cabfac.vfec between '" + obj.getString("fecha_inicio") + "' and '"
+                    + obj.getString("fecha_fin") + "'\n" +
+                    "   and dm_cabfac.idven not in (\n" +
+                    "   select dm_cabfac.idven\n" +
+                    "   from dm_cabfac,\n" +
+                    "   tbven\n" +
+                    "   where tbven.idpeddm = dm_cabfac.idven)\n" +
+                    ") as  monto_total_pedidos, \n" +
+                    "( " +
+                    "    select count(tbven.idven) " +
+                    "    from tbven " +
+                    "    where tbven.idcli = tbcli.idcli " +
+                    "    and tbven.vtipo in ('VF', 'VD') " +
+                    "    and tbven.vefa not in ('A') " +
+                    "    and tbven.vfec between '" + obj.getString("fecha_inicio") + "' and '"
+                    + obj.getString("fecha_fin") + "'\n" +
+                    ") as  cantidad_ventas, ";
 
             consulta += "( ";
             consulta += "    select sum(tbvd.vdpre*tbvd.vdcan) ";
@@ -378,23 +575,15 @@ public class TbCli {
             consulta += "    and tbven.vtipo in ('VF', 'VD') ";
             consulta += "    and tbven.vefa not in ('A') ";
             consulta += "    and tbven.idven = tbvd.idven ";
-            consulta += "    and tbven.idtg is null  ";
-            consulta += ") as monto_total_pedidos, ";
-            consulta += "( ";
-            consulta += "    select sum(tbvd.vdpre*tbvd.vdcan) ";
-            consulta += "        from tbven, tbvd ";
-            consulta += "    where tbven.idcli = tbcli.idcli ";
-            consulta += "    and tbven.vtipo in ('VF', 'VD') ";
-            consulta += "    and tbven.vefa not in ('A') ";
-            consulta += "    and tbven.idven = tbvd.idven ";
-            consulta += "    and tbven.idtg is not null  ";
+            consulta += "    and tbven.vfec between '" + obj.getString("fecha_inicio") + "' and '"
+                    + obj.getString("fecha_fin") + "'\n";
             consulta += ") as monto_total_ventas ";
 
-            consulta +="from tbcli "+
-            "where tbcli.idcli = "+obj.get("idcli");
+            consulta += "from tbcli " +
+                    "where tbcli.idcli = " + obj.get("idcli");
 
-            JSONArray data = Http.send_(url, consulta, apiKey);
-            
+            JSONArray data = Dhm.query(consulta);
+
             obj.put("data", data);
             obj.put("estado", "exito");
         } catch (Exception e) {

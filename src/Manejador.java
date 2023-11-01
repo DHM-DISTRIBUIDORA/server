@@ -14,6 +14,7 @@ public class Manejador {
             return;
         }
         switch (obj.getString("component")) {
+            case "usuario": usuario.onMessage(obj, session); break;
             case Dato.COMPONENT: Dato.onMessage(obj, session); break;
             case RolDato.COMPONENT: RolDato.onMessage(obj, session); break;
             case UsuarioDato.COMPONENT: UsuarioDato.onMessage(obj, session); break;
@@ -39,8 +40,13 @@ public class Manejador {
             case TbCliTipo.COMPONENT: TbCliTipo.onMessage(obj, session); break;
             case background_location.COMPONENT: background_location.onMessage(obj, session); break;
             case VisitaVendedor.COMPONENT: VisitaVendedor.onMessage(obj, session); break;
+            case VisitaTransportista.COMPONENT: VisitaTransportista.onMessage(obj, session); break;
             case TbTg.COMPONENT: TbTg.onMessage(obj, session); break;
             case TbAlm.COMPONENT: TbAlm.onMessage(obj, session); break;
+            case Enviroments.COMPONENT: new Enviroments(obj, session); break;
+            case TbCat.COMPONENT: TbCat.onMessage(obj, session); break;
+            case LocationInfo.COMPONENT: LocationInfo.onMessage(obj, session); break;
         }
     }
 }
+

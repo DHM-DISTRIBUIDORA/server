@@ -27,15 +27,19 @@ import Servisofts.SConfig;
 
 public class GPX {
 
-    public static void saveGPX(String key_usuario, double lat, double lon, double deegre) {
+    public static void saveGPX(String key_usuario, double lat, double lon, double deegre) throws ParserConfigurationException, IOException, SAXException {
         new GPX(key_usuario).addWPT(lat, lon, deegre);
     }
 
-    public static void saveGPXGlup(String key_glup, String key_usuario, double lat, double lon, double deegre) {
+    public static void saveGPX(String key_usuario, double lat, double lon, double deegre, Date fecha) throws ParserConfigurationException, IOException, SAXException {
+        new GPX(key_usuario).addWPT(lat, lon, deegre, fecha);
+    }
+
+    public static void saveGPXGlup(String key_glup, String key_usuario, double lat, double lon, double deegre) throws ParserConfigurationException, IOException, SAXException {
         new GPX(key_usuario, key_glup).addWPT(lat, lon, deegre);
     }
 
-    public static JSONObject getFirstPost(String key_glup, String key_usuario) {
+    public static JSONObject getFirstPost(String key_glup, String key_usuario) throws ParserConfigurationException, IOException, SAXException {
         return new GPX(key_usuario, key_glup).getWPT(0);
     }
 
@@ -107,25 +111,27 @@ public class GPX {
         }
     }
 
-    public Document load() {
-        try {
-            // File f = new File("./" + name + ".gpx");
-            Path fileName = Path.of(this.url + name + ".gpx");
-            DocumentBuilder docBuilder = dFactory.newDocumentBuilder();
-            StringBuilder xmlStringBuilder = new StringBuilder();
-            xmlStringBuilder.append(Files.readString(fileName));
-            ByteArrayInputStream input = new ByteArrayInputStream(xmlStringBuilder.toString().getBytes("UTF-8"));
-            Document doc = docBuilder.parse(input);
-            return doc;
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            return null;
-        }
+    public Document load() throws ParserConfigurationException, IOException, SAXException {
+        String url = this.url + name + ".gpx";
+    
+        // File f = new File("./" + name + ".gpx");
+        Path fileName = Path.of(url);
+        DocumentBuilder docBuilder = dFactory.newDocumentBuilder();
+        StringBuilder xmlStringBuilder = new StringBuilder();
+        xmlStringBuilder.append(Files.readString(fileName));
+        ByteArrayInputStream input = new ByteArrayInputStream(xmlStringBuilder.toString().getBytes("UTF-8"));
+        Document doc = docBuilder.parse(input);
+        return doc;
+        
     }
 
-    public JSONObject getWPT(int pos) {
-        if (load() == null) {
+    public JSONObject getWPT(int pos) throws ParserConfigurationException, IOException, SAXException {
+        try{
+            load();
+        }catch(Exception e){
             init();
         }
+        
 
         Document doc = load();
         Element root = doc.getDocumentElement();
@@ -138,8 +144,10 @@ public class GPX {
         return obj;
     }
 
-    public void addWPT(double lat, double lon, double deegre) {
-        if (load() == null) {
+    public void addWPT(double lat, double lon, double deegre) throws ParserConfigurationException, IOException, SAXException {
+        try{
+            load();
+        }catch(Exception e){
             init();
         }
 
@@ -154,6 +162,27 @@ public class GPX {
         Element time = doc.createElement("time");
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         time.setTextContent(format.format(new Date()));
+        wpt.appendChild(time);
+        save(doc);
+    }
+
+    public void addWPT(double lat, double lon, double deegre, Date fecha) throws ParserConfigurationException, IOException, SAXException {
+         try{
+            load();
+        }catch(Exception e){
+            init();
+        }
+        Document doc = load();
+        Element root = doc.getDocumentElement();
+        Element wpt = doc.createElement("wpt");
+        wpt.setAttribute("lat", lat + "");
+        wpt.setAttribute("lon", lon + "");
+        
+        wpt.setAttribute("deegre", deegre + "");
+        root.appendChild(wpt);
+        Element time = doc.createElement("time");
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        time.setTextContent(format.format(fecha));
         wpt.appendChild(time);
         save(doc);
     }

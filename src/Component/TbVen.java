@@ -26,12 +26,39 @@ public class TbVen {
             case "editar":
                 editar(obj, session);
                 break;
+            case "getPedidosDelivery":
+                getPedidosDelivery(obj, session);
+                break;
             case "eliminar":
                 eliminar(obj, session);
                 break;
             case "generarNotaEntrega":
                 generarNotaEntrega(obj, session);
                 break;
+            case "getConductor":
+                getConductor(obj, session);
+                break;
+        }
+    }
+
+    public static void getPedidosDelivery(JSONObject obj, SSSessionAbstract session) {
+        try {
+            String consulta = "select tbven.*\n" + //
+            "from tbven,\n" + //
+            "tbtg\n" + //
+            "where tbven.idtg = tbtg.idtg\n" + //
+            "and tbven.idcli = "+obj.get("idcli")+"\n" + //
+            "and tbtg.tgest = 'DESPACHADO'\n" ;
+           
+            JSONArray tbven = Dhm.query(consulta);
+            
+            obj.put("data", tbven);
+            
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -92,6 +119,25 @@ public class TbVen {
             }
 
             obj.put("data", venta);
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void getConductor(JSONObject obj, SSSessionAbstract session) {
+        try {
+
+            String consulta = "select tbemp.* "+
+            "from tbven, tbtg, tbemp "+
+            "where tbven.idven = " + obj.get("idven")+" "+
+            "and tbven.idtg = tbtg.idtg\n" + //
+            "and tbemp.idemp = tbtg.idemp\n" + //
+            "and tbtg.tgest = 'DESPACHADO'\n" ; //
+
+            obj.put("data", Dhm.query(consulta));
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
