@@ -17,6 +17,107 @@ public class Reporte {
             case "execute_function":
                 execute_function(obj, session);
                 break;
+            case "getClienteConPedidos":
+                getClienteConPedidos(obj);
+                break;
+            case "getClienteSinPedidos":
+                getClienteSinPedidos(obj);
+                break;
+        }
+    }
+
+    public static void getClienteSinPedidos(JSONObject obj) {
+        try {
+            String consulta = "select tbcli.idcli,\n" + //
+                    "tbcli.clicod,\n" + //
+                    "tbcli.clinom,\n" + //
+                    "tbcli.clidir,\n" + //
+                    "tbcli.clilat,\n" + //
+                    "tbcli.clilon\n" + //
+                    "from tbcli\n" + //
+                    "where tbcli.idcli not in (\n" + //
+
+                    "select  \n" +
+                    "tbcli.idcli \n" +
+                    "from  \n" +
+                    "tbcli, \n" +
+                    "dm_cabfac, \n" +
+                    "dm_detfac, \n" +
+                    "tbemp \n" +
+                    "where  dm_detfac.idven = dm_cabfac.idven \n" +
+                    "and dm_detfac.vdcan > 0 \n" +
+                    "and tbcli.clicod = dm_cabfac.clicod \n";
+                    if(obj.has("idz")){
+                        consulta += "and tbcli.idz = "+obj.get("idz")+" \n" ;
+                    }
+                    
+                    consulta += "and dm_cabfac.vfec between '" + obj.getString("fecha_inicio") + "' and '"
+                    + obj.getString("fecha_fin") + "'\n" + //
+                    "and tbemp.empcod = dm_cabfac.codvendedor \n" +
+                    "and dm_cabfac.idven not in (\n" +
+                    "    select dm_cabfac.idven\n" +
+                    "    from dm_cabfac,\n" +
+                    "    tbven\n" +
+                    "    where tbven.idpeddm = dm_cabfac.idven)\n" +
+                    "group by  \n" +
+                    "tbcli.idcli \n" +
+
+                    ") \n";
+                    if(obj.has("idz")){
+                        consulta += "and tbcli.idz = "+obj.get("idz")+" ";
+                    }
+            obj.put("data", Dhm.query(consulta));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void getClienteConPedidos(JSONObject obj) {
+        try {
+            String consulta = "SET DATEFORMAT ymd; select \n" + //
+                    "count(dm_detfac.vdcan) as cantidad,\n" + //
+                    "sum(dm_detfac.vdpre) as monto,\n" + //
+                    "tbcli.idcli,\n" + //
+                    "tbcli.clidir,\n" +
+                    "tbcli.clicod,\n" +
+                    "tbcli.clinom,\n" + //
+                    "tbcli.clilat,\n" + //
+                    "tbcli.clilon\n" + //
+                    "from tbcli,\n" + //
+                    "dm_cabfac,\n" + //
+                    "dm_detfac,\n" + //
+                    "tbemp\n" + //
+                    "where  dm_detfac.idven = dm_cabfac.idven \n" +
+                    "and dm_detfac.vdcan > 0 \n" +
+                    "and tbcli.clicod = dm_cabfac.clicod \n" +
+                    "and dm_cabfac.vfec between '" + obj.getString("fecha_inicio") + "' and '"
+                    + obj.getString("fecha_fin") + "' \n" +
+                    "and tbemp.empcod = dm_cabfac.codvendedor \n" +
+                    "    and dm_cabfac.idven not in (\n" +
+                    "    select dm_cabfac.idven\n" +
+                    "    from dm_cabfac,\n" +
+                    "    tbven\n" +
+                    "    where tbven.idpeddm = dm_cabfac.idven)\n";
+            if (obj.has("idemp")) {
+                consulta += "and tbemp.idemp = " + obj.get("idemp") + "\n"; //
+            }
+            consulta += "group by \n" + //
+                    "tbcli.clinom,\n" + //
+                    "tbcli.clilat,\n" + //
+                    "tbcli.idcli,\n" + //
+                    "tbcli.clidir,\n" +
+                    "tbcli.clicod,\n" +
+                    "tbcli.clilon";
+
+            obj.put("data", Dhm.query(consulta));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
         }
     }
 

@@ -23,6 +23,9 @@ public class TbEmp {
             case "picklist":
                 picklist(obj, session);
                 break;
+            case "picklist2":
+                picklist2(obj, session);
+                break;
             case "getVentasFactura":
                 getVentasFactura(obj, session);
                 break;
@@ -131,6 +134,39 @@ public class TbEmp {
         }
     }
 
+    public static void picklist2(JSONObject obj, SSSessionAbstract session) {
+
+        String consulta = "SELECT * FROM tbtg WHERE idemp="+obj.get("idemp")+" AND tgfec='"+obj.get("fecha")+"'";
+        JSONArray tbtg_ = Dhm.query(consulta);
+        if(tbtg_.length()==0){
+            
+            return;
+        }
+
+        JSONObject tbtg = tbtg_.getJSONObject(0);
+        consulta = "SELECT  tbprdlin.lincod,  \n" + //
+                "tbvd.idprd,  \n" + //
+                "prdcxu,  \n" + //
+                "vfec, \n" + //
+                "prdcod,  \n" + //
+                "prdnom,  \n" + //
+                "prdunid,  \n" + //
+                "prduxcdes, \n" + //
+                "SUM(vdcan) AS cantidad_vendido,\n" + //
+                "SUM(vdimp) AS total_vendido \n" + //
+                "FROM (((((tbven LEFT JOIN  tbvd \n" + //
+                "ON tbven.idven=tbvd.idven) LEFT JOIN tbcli ON tbven.idcli=tbcli.idcli) \n" + //
+                "LEFT JOIN tbprd ON tbvd.idprd=tbprd.idprd) LEFT JOIN tbprdlin ON tbprd.idlinea=tbprdlin.idlinea) \n" + //
+                "LEFT JOIN tbtg ON tbven.idtg=tbtg.idtg) LEFT JOIN tbzon ON tbcli.idz=tbzon.idz LEFT JOIN tbemp ON tbven.idemp=tbemp.idemp \n" + //
+                "WHERE tbven.vtipo LIKE 'V%' AND tbven.idven > 0   AND idalm=1  AND tbtg.idtg="+tbtg.get("idtg")+" \n" + //
+                "GROUP BY tbprdlin.lincod, tbvd.idprd, prdcxu, vfec, prdcod, prdnom, prdunid, prduxcdes \n" + //
+                " ORDER BY  prdcod";
+
+        JSONArray qery2 = Dhm.query(consulta);
+
+        obj.put("data", qery2);
+        obj.put("estado", "exito");
+    }
     public static void picklist(JSONObject obj, SSSessionAbstract session) {
 
         String consulta = "SELECT * FROM tbtg WHERE idemp="+obj.get("idemp")+" AND tgfec='"+obj.get("fecha")+"'";
@@ -158,6 +194,7 @@ public class TbEmp {
         obj.put("data", qery2);
         obj.put("estado", "exito");
     }
+
 
     public static void entregas(JSONObject obj, SSSessionAbstract session) {
 

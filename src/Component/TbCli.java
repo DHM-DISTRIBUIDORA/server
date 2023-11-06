@@ -49,9 +49,6 @@ public class TbCli {
             case "getAllPedidos":
                 getAllPedidos(obj, session);
                 break;
-            case "getSinPedidos":
-                getSinPedidos(obj, session);
-                break;
             case "getClientesDia":
                 getClientesDia(obj, session);
                 break;
@@ -326,8 +323,7 @@ public class TbCli {
                     "tbcli.clilat,\n" + //
                     "tbcli.clilon\n" + //
                     "from tbcli\n" + //
-                    "where tbcli.cliidemp = " + obj.get("idemp") + "\n" + //
-                    "and tbcli.idcli not in (\n" + //
+                    "where tbcli.idcli not in (\n" + //
 
                     "select  \n" +
                     "tbcli.idcli \n" +
@@ -342,7 +338,6 @@ public class TbCli {
                     "and dm_cabfac.vfec between '" + obj.getString("fecha_inicio") + "' and '"
                     + obj.getString("fecha_fin") + "'\n" + //
                     "and tbemp.empcod = dm_cabfac.codvendedor \n" +
-                    "and tbemp.idemp =  " + obj.get("idemp") + "\n" + //
                     "and dm_cabfac.idven not in (\n" +
                     "    select dm_cabfac.idven\n" +
                     "    from dm_cabfac,\n" +

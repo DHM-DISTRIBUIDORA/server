@@ -61,7 +61,8 @@ public class background_location {
                             location.put("latitude", data.getDouble("latitude"));
                             location.put("longitude", data.getDouble("longitude"));
                             Date fecha = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(data.getString("fecha_on"));
-                            GPX.saveGPX(obj.getString("key_usuario"), data.getDouble("latitude"), data.getDouble("longitude"), data.getDouble("rotation"), fecha);
+                            GPX.saveGPX(obj.getString("key_usuario"), data.getDouble("latitude"), data.getDouble("longitude"), data.getDouble("rotation"), fecha, 
+                            data.getDouble("altitude"),data.getDouble("accuracy"), data.getDouble("speed"));
                         }
                         location.put("fecha_last", SUtil.now());
                     }

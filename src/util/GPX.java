@@ -35,6 +35,10 @@ public class GPX {
         new GPX(key_usuario).addWPT(lat, lon, deegre, fecha);
     }
 
+    public static void saveGPX(String key_usuario, double lat, double lon, double deegre, Date fecha, Double altitude, Double accuracy, double speed) throws ParserConfigurationException, IOException, SAXException {
+        new GPX(key_usuario).addWPT(lat, lon, deegre, fecha, altitude, accuracy, speed);
+    }
+
     public static void saveGPXGlup(String key_glup, String key_usuario, double lat, double lon, double deegre) throws ParserConfigurationException, IOException, SAXException {
         new GPX(key_usuario, key_glup).addWPT(lat, lon, deegre);
     }
@@ -179,6 +183,32 @@ public class GPX {
         wpt.setAttribute("lon", lon + "");
         
         wpt.setAttribute("deegre", deegre + "");
+        root.appendChild(wpt);
+        Element time = doc.createElement("time");
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        time.setTextContent(format.format(fecha));
+        wpt.appendChild(time);
+        save(doc);
+    }
+
+    public void addWPT(double lat, double lon, double deegre, Date fecha, Double altitude, Double accuracy, double speed) throws ParserConfigurationException, IOException, SAXException {
+         try{
+            load();
+        }catch(Exception e){
+            init();
+        }
+        Document doc = load();
+        Element root = doc.getDocumentElement();
+        Element wpt = doc.createElement("wpt");
+        wpt.setAttribute("lat", lat + "");
+        wpt.setAttribute("lon", lon + "");
+        wpt.setAttribute("deegre", deegre + "");
+
+        wpt.setAttribute("altitude", altitude + "");
+        wpt.setAttribute("accuracy", accuracy + "");
+        wpt.setAttribute("speed", speed + "");
+        
+        
         root.appendChild(wpt);
         Element time = doc.createElement("time");
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
