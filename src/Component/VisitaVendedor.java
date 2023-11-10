@@ -75,9 +75,17 @@ public class VisitaVendedor {
             obj.put("error", "no existe data");
             
         } catch (Exception e) {
-            obj.put("estado", "error");
-            obj.put("error", e.getMessage());
-            e.printStackTrace();
+            if(e.getMessage().indexOf("visita_venta_pkey")>-1){
+                obj.put("estado", "exito");
+                obj.put("data", obj.getJSONObject("data"));
+                //e.printStackTrace();
+                System.out.println("VisitaVendedor --> save --> Duplicate key");
+            }else{
+                obj.put("estado", "error");
+                obj.put("error", e.getMessage());
+                e.printStackTrace();
+            }
+            
         }
     }
 

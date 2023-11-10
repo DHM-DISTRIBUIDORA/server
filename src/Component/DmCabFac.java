@@ -248,7 +248,7 @@ public class DmCabFac {
                         JSONObject detalle;
                         
                         for (int j = 0; j < dm_cabfac.getJSONArray("detalle").length(); j++) {
-                            detalle = obj.getJSONArray("insert").getJSONObject(i).getJSONArray("detalle").getJSONObject(j);
+                            detalle = dm_cabfac.getJSONArray("detalle").getJSONObject(j);
                             System.out.println("Pedido # "+(i+1)+" idven:"+idven+" detalle ///// "+(j+1));
                             consulta += "insert into dm_detfac (idven,prdcod,vddesc,vdpre,vdcan) values ("+idven+",'"+detalle.get("prdcod")+"',0,"+detalle.getDouble("vdpre")+","+detalle.getInt("vdcan")+");\n";    
                         }

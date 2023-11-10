@@ -1,5 +1,8 @@
 package Component;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
 import Servisofts.SUtil;
@@ -74,8 +77,10 @@ public class TbPrd {
 
         String almacen = "";
         if(obj.has("idalm") && !obj.isNull("idalm")){
-            almacen = " where idalm = "+obj.get("idalm")+" ";
+            almacen = " and idalm = "+obj.get("idalm")+" ";
         }
+
+        SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
 
         try {
             String consulta = "SELECT tbprd.prdcod, "+
@@ -98,13 +103,16 @@ public class TbPrd {
             "select SUM(tbvd.vdcan) as cantidad, "+
             "tbvd.idprd "+
             "from tbvd JOIN tbven on tbvd.idven = tbven.idven "+
+            "where  tbven.vfec <=  '"+formato.format(new Date())+"' "+
             ""+almacen+
             "group by tbvd.idprd "+
             ") ventas, "+
             "( "+
             "select SUM(tbcd.cdcan) as cantidad, "+
             "tbcd.idprd "+
-            "from tbcd  "+
+            "from tbcd, tbcom  "+
+            "where tbcom.idcom = tbcd.idcom "+
+            " and tbcom.cfec <=  '"+formato.format(new Date())+"' "+
             " "+almacen+" "+
             "group by tbcd.idprd "+
             ") compras, "+
