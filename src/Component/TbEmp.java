@@ -68,16 +68,26 @@ public class TbEmp {
                 return;
             }
 
-
             String consulta = "SELECT * FROM tbtg WHERE idemp="+obj.get("idemp")+" AND tgfec='"+obj.get("fecha")+"'";
             JSONArray tbtg_ = Dhm.query(consulta);
             if(tbtg_.length()==0){
-                
                 return;
             }
 
             JSONObject tbtg = tbtg_.getJSONObject(0);
-            consulta = "SELECT tbven.idven, tbven.vtipp, tbven.vfec AS fecha, tbcli.clilat, tbcli.clilon, tbven.vobs,tbcli.clitel,  tbcli.idcli,tbcli.clicod AS codigo, zcod AS zona, tbven.vtipo AS tipo, vdoc AS docum, clinom, vcli AS razon_social, \n" + //
+            consulta = "SELECT tbven.idven, \n"+
+                    "tbven.vtipp, \n" + //
+                    " tbven.vfec AS fecha,\n" + //
+                    " tbcli.clilat, \n" + //
+                    "tbcli.clilon, \n" + //
+                    "tbven.vobs, \n" + //
+                    "tbcli.clitel, \n" + //
+                    "tbcli.idcli, \n" + //
+                    "tbcli.clicod AS codigo, \n" + //
+                    "zcod AS zona, \n" + //
+                    "tbven.vtipo AS tipo, \n" + //
+                    "vdoc AS docum, \\n" + //
+                    "clinom, vcli AS razon_social, \n" + //
                     "CASE VR.vtipp WHEN 0 THEN TimpR-ISNULL(Tdesc,0) ELSE 0 END AS contado, \n" + //
                     "CASE VR.vtipp WHEN 1 THEN TimpR-ISNULL(Tdesc,0) ELSE 0 END AS credito, vdesc AS descen,clidir AS direccion, vnit  \n" + //
                     "FROM tbven LEFT JOIN tbvenaux ON tbven.idven=tbvenaux.idven  LEFT JOIN tbemp ON tbven.idemp=tbemp.idemp \n" + //
@@ -98,10 +108,7 @@ public class TbEmp {
                     "WHERE tbven.vtipo LIKE 'V%' AND vdest=2 AND tbven.vfec='"+obj.get("fecha")+"'  AND tbtg.idtg="+tbtg.get("idtg")+"  AND idalm=1   \n" + //
                     "GROUP BY tbven.idven, tbven.vtipp,tbcli.idcli,tbven.vfec,vnit, tbcli.clicod, tbven.vobs,tbcli.clitel, tbcli.clilat, tbcli.clilon, zcod, tbven.vtipo, vdoc, clinom, vcli, TimpR, tcanven, VR.vtipp,Tdesc, vdesc, zcod, clidir, clidirnro, cliadic , clilat, clilon  ORDER BY zcod, vdoc  ";
 
-
-
             obj.put("data", Dhm.query(consulta));
-
 
             consulta = "SELECT tbvd.idven, tbvd.idvd, tbvd.idprd,  tbvd.vdcan, tbvd.vdpre \n" + //
                     "FROM tbven LEFT JOIN tbvenaux ON tbven.idven=tbvenaux.idven  LEFT JOIN tbemp ON tbven.idemp=tbemp.idemp \n" + //
@@ -122,8 +129,6 @@ public class TbEmp {
                     "\n" + //
                     "WHERE tbven.vtipo LIKE 'V%' AND tbvd.vdest=2 AND tbven.vfec='"+obj.get("fecha")+"'  AND tbtg.idtg="+tbtg.get("idtg")+"  AND tbvd.idalm=1   \n" + //
                     "GROUP BY  tbvd.idvd, tbvd.idprd, tbvd.vdcan, tbvd.vdpre, tbvd.idven   ";
-
-
 
             obj.put("detalle", Dhm.query(consulta));
             obj.put("estado", "exito");

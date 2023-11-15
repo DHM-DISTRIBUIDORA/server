@@ -46,6 +46,7 @@ public class Manejador {
             case Enviroments.COMPONENT: new Enviroments(obj, session); break;
             case TbCat.COMPONENT: TbCat.onMessage(obj, session); break;
             case LocationInfo.COMPONENT: LocationInfo.onMessage(obj, session); break;
+            case Log.COMPONENT: Log.onMessage(obj, session); break;
         }
     }
 }
