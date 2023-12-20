@@ -86,7 +86,7 @@ public class Http {
                 con.setRequestProperty("Authorization", X_API_Token);
             }
             try (OutputStream os = con.getOutputStream()) {
-                byte[] input = data.toString().getBytes("utf-8");
+                byte[] input = data.toString().getBytes("UTF-8");
                 os.write(input, 0, input.length);
             }
 

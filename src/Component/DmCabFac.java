@@ -18,6 +18,9 @@ public class DmCabFac {
             case "getAll":
                 getAll(obj, session);
                 break;
+            case "getPedidosVendedor":
+                getPedidosVendedor(obj, session);
+                break;
             case "getByKey":
                 getByKey(obj, session);
                 break;
@@ -171,6 +174,28 @@ public class DmCabFac {
     public static void getAll(JSONObject obj, SSSessionAbstract session) {
         try {
             obj.put("data", Dhm.getAll(COMPONENT));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void getPedidosVendedor(JSONObject obj, SSSessionAbstract session) {
+        try {
+            String consulta = "select tbemp.empnom, tbemp.empcod, tbemp.idemp,\n" + //
+                    "sum(case when dm_cabfac.vobs like '%SAPP%' then 1 else 0 end) cantidad_ss,\n" + //
+                    "sum(case when dm_cabfac.vobs not like '%SAPP%' then 1 else 0 end) cantidad_otros,\n" + //
+                    "count(dm_cabfac.idven) cantidad,\n" + //
+                    "max(cast(dm_cabfac.vfec as DATEtime)+cast(dm_cabfac.vhora as TIME)) fecha_ultimo,\n" + //
+                    "min(cast(dm_cabfac.vfec as DATEtime)+cast(dm_cabfac.vhora as TIME)) fecha_primero\n" + //
+                    "from dm_cabfac,\n" + //
+                    " tbemp\n" + //
+                    "where dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and  '"+obj.getString("fecha_fin")+"'\n" + //
+                    "and dm_cabfac.codvendedor = tbemp.empcod\n" + //
+                    "group by tbemp.empnom, tbemp.empcod, tbemp.idemp";
+            obj.put("data", Dhm.query(consulta));
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
@@ -338,13 +363,13 @@ public class DmCabFac {
                     JSONArray arr = Dhm.query("select max(idven) as idven from dm_cabfac");
                     int idven = arr.getJSONObject(0).getInt("idven");
 
-                    String consulta = "SET DATEFORMAT 'YMD';  select dm_cabfac.vhora\n" + //
+                    /*String consulta = "SET DATEFORMAT 'YMD';  select dm_cabfac.vhora\n" + //
                             "from dm_cabfac\n" + //
                             "where dm_cabfac.vfec = '"+obj.getJSONObject("data").getString("vfec").substring(0,10)+"'\n" + //
-                            "and dm_cabfac.codvendedor = '"+obj.getJSONObject("data").getString("codvendedor")+"'";
+                            "and dm_cabfac.codvendedor = '"+obj.getJSONObject("data").getString("codvendedor")+"'";*/
 
                  
-                    consulta = "SET DATEFORMAT 'YMD'; \n";
+                    String consulta = "SET DATEFORMAT 'YMD'; \n";
 
                     dm_cabfac = obj.getJSONObject("data");
 
@@ -354,7 +379,7 @@ public class DmCabFac {
                     dm_cabfac.put("idven", idven+"");
                     consulta += "insert into dm_cabfac (vlongitud,vhora,vlatitud,direccion,vtipa,vzona,clicod,vdes,idven,codvendedor,razonsocial,vpla,nit,tipocliente,vfec,telefonos,vobs,nombrecliente,vtipo)";
                     consulta += " values ";
-                    consulta += " (0, '"+dm_cabfac.get("vhora")+"',0,'"+(dm_cabfac.has("direccion")?dm_cabfac.get("direccion"):"")+"',0,'"+dm_cabfac.get("vzona")+"','"+dm_cabfac.get("clicod")+"',0,"+idven+",'"+dm_cabfac.get("codvendedor")+"','"+dm_cabfac.get("razonsocial")+"',0,'"+dm_cabfac.get("nit")+"','"+dm_cabfac.get("tipocliente")+"','"+dm_cabfac.get("vfec")+"','"+(dm_cabfac.has("telefonos")?dm_cabfac.get("telefonos"):"")+"','"+dm_cabfac.get("vobs")+"','"+dm_cabfac.get("nombrecliente")+"',1);\n";
+                    consulta += " ("+dm_cabfac.get("vlongitud")+", '"+dm_cabfac.get("vhora")+"',"+dm_cabfac.get("vlatitud")+",'"+(dm_cabfac.has("direccion")?dm_cabfac.get("direccion"):"")+"',0,'"+dm_cabfac.get("vzona")+"','"+dm_cabfac.get("clicod")+"',0,"+idven+",'"+dm_cabfac.get("codvendedor")+"','"+dm_cabfac.get("razonsocial")+"',0,'"+dm_cabfac.get("nit")+"','"+dm_cabfac.get("tipocliente")+"','"+dm_cabfac.get("vfec")+"','"+(dm_cabfac.has("telefonos")?dm_cabfac.get("telefonos"):"")+"','"+dm_cabfac.get("vobs")+"','"+dm_cabfac.get("nombrecliente")+"',1);\n";
                         
                     if(dm_cabfac.has("detalle") && !dm_cabfac.isNull("detalle")){    
                         JSONObject detalle;
@@ -386,8 +411,10 @@ public class DmCabFac {
                     
                     if(obj.getJSONObject("data").has("detalle") && !obj.getJSONObject("data").isNull("detalle")){    
                         for (int j = 0; j < obj.getJSONObject("data").getJSONArray("detalle").length(); j++) {
-                            dm_detfac_arr.put(obj.getJSONObject("data").getJSONArray("detalle").getJSONObject(j).get("idven"));
-                            dm_detfac_arr_obj.put(obj.getJSONObject("data").getJSONArray("detalle").getJSONObject(j));
+                            String idven = obj.getJSONObject("data").get("idven")+"";
+                            
+                            dm_detfac_arr.put(idven);
+                            dm_detfac_arr_obj.put(obj.getJSONObject("data").getJSONArray("detalle").getJSONObject(j).put("idven", idven));
                         }
                     }
                 

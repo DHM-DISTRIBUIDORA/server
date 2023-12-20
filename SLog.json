@@ -1,26 +1,14 @@
 {
   "Servicios": {
-    "notification": {
-      "host": "192.168.5.33:10033",
-      "status": "exito"
-    },
-    "roles_permisos": {
-      "host": "192.168.5.16:10016",
-      "status": "exito"
-    },
-    "usuario": {
-      "host": "192.168.5.2:10002",
-      "status": "exito"
-    },
-    "geolocation": {
-      "host": "192.168.5.5:10005",
-      "status": "exito"
-    }
+    "notification": true,
+    "roles_permisos": true,
+    "usuario": true,
+    "geolocation": true
   },
   "PostgreSQL": {
     "host": "jdbc:postgresql://192.168.5.49:5432/servisofts.dhm",
     "status": "exito"
   },
   "- SLog": "RealTime Log from server Servisofts",
-  "- Fecha": "2023-11-14T23:32:54.000903"
+  "- Fecha": "2023-12-20T01:53:18.000441"
 }

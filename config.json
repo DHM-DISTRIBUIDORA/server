@@ -16,7 +16,8 @@
         "url_gpx": "/u01/servisoftsFiles/dhm/gpx/"
     },
     "sqlServerApi":{
-        "url":"http://181.188.139.50:9093/",
+        "url":"http://181.188.139.50:9091/",
+        "_url":"http://181.188.139.50:9093/",
         "apiKey":"servisofts"
     },
     "data_base": {

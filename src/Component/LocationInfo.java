@@ -30,6 +30,9 @@ public class LocationInfo {
         try {
              
             String consulta = "select location_info_get_all('"+obj.getString("fecha_inicio")+"', '"+obj.getString("fecha_fin")+"') as json";
+            if(obj.has("key_usuario")){
+                consulta = "select location_info_get_all('"+obj.getString("key_usuario")+"','"+obj.getString("fecha_inicio")+"', '"+obj.getString("fecha_fin")+"') as json";
+            }
 
             JSONObject data = SPGConect.ejecutarConsultaObject(consulta);
             obj.put("data", data);

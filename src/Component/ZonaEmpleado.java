@@ -6,8 +6,8 @@ import Servisofts.SPGConect;
 import Servisofts.SUtil;
 import Server.SSSAbstract.SSSessionAbstract;
 
-public class RolDato {
-    public static final String COMPONENT = "rol_dato";
+public class ZonaEmpleado {
+    public static final String COMPONENT = "zona_empleado";
 
     public static void onMessage(JSONObject obj, SSSessionAbstract session) {
         switch (obj.getString("type")) {
@@ -22,6 +22,9 @@ public class RolDato {
                 break;
             case "editar":
                 editar(obj, session);
+                break;
+            case "save":
+                save(obj, session);
                 break;
         }
     }
@@ -45,6 +48,50 @@ public class RolDato {
             JSONObject data = SPGConect.ejecutarConsultaObject(consulta);
             obj.put("data", data);
             obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void save(JSONObject obj, SSSessionAbstract session) {
+        try {
+            // insertando datos nuevos
+
+            if (obj.has("data") && !obj.isNull("data")) {
+
+                switch(obj.getJSONObject("data").getString("sync_type")){
+                    case "insert":{
+                        obj.getJSONObject("data").put("key", SUtil.uuid());
+                        obj.getJSONObject("data").put("fecha_on", SUtil.now());
+                        obj.getJSONObject("data").put("estado", 1);
+
+                        SPGConect.insertObject(COMPONENT, obj.getJSONObject("data"));
+                        obj.put("estado", "exito");
+                        obj.put("data", obj.getJSONObject("data"));
+                        return;
+                    }
+                    case "update":{
+                        SPGConect.editObject(COMPONENT, obj.getJSONObject("data"));
+                        obj.getJSONObject("data").remove("sync_type");
+                        obj.put("estado", "exito");
+                        obj.put("data", obj.getJSONObject("data"));
+                        return;
+                    }
+                    case "delete":{
+                        SPGConect.editObject(COMPONENT, obj.getJSONObject("data").put("estado", 0));
+                        obj.getJSONObject("data").remove("sync_type");
+                        obj.put("estado", "exito");
+                        obj.put("data", obj.getJSONObject("data"));
+                        return;
+                    }
+                }
+            }
+
+
+            obj.put("estado", "error");
+            obj.put("error", "No existe data");
         } catch (Exception e) {
             obj.put("estado", "error");
             obj.put("error", e.getMessage());

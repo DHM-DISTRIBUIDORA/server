@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
 import Servisofts.SConfig;
+import Servisofts.SPGConect;
 import Servisofts.SUtil;
 
 public class TbCli {
@@ -161,8 +162,14 @@ public class TbCli {
                         cantCliZonas.getJSONObject(tbcli.get("idz") + "").put("cant",
                                 cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
 
-                        tbcli.put("clicod", cantCliZonas.getJSONObject(tbcli.get("idz") + "").getString("znom") + " - "
+                        if(cantCliZonas.getJSONObject(tbcli.get("idz") + "").has("znom")){
+                            tbcli.put("clicod", cantCliZonas.getJSONObject(tbcli.get("idz") + "").getString("znom") + " - "
                                 + cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+                        }else{
+                            tbcli.put("clicod", "_" + " - "
+                                + cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+                        }
+                        
                     }
                 }
                 Dhm.registroAll(COMPONENT, PK, obj.getJSONArray("insert"));
@@ -231,6 +238,7 @@ public class TbCli {
                                     + cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
                         }
                         Dhm.registro(COMPONENT, PK, obj.getJSONObject("data"));
+
 
                         obj.getJSONObject("data").remove("sync_type");
                         obj.put("estado", "exito");
@@ -359,10 +367,23 @@ public class TbCli {
         try {
 
             if (obj.has("cliidemp")) {
-                String consulta = "select "+selecttbcli+"";              
-                consulta += "from tbcli, tbzon where tbzon.idz = tbcli.idz and tbzon.idemp = " + obj.get("cliidemp");
 
-                obj.put("data", Dhm.query(consulta));
+                String consulta = "select array_to_json(array_agg(idz)) as json \n"+
+                "from zona_empleado \n"+
+                "where zona_empleado.idemp = "+obj.get("cliidemp")+"\n"+
+                "and zona_empleado.dia = "+obj.get("dia")+"\n"+
+                "and zona_empleado.estado > 0";
+
+                JSONArray idzs = SPGConect.ejecutarConsultaArray(consulta);
+                if(idzs.length()>0){
+                    consulta = "select "+selecttbcli+"";
+                    consulta += "from tbcli where tbcli.idz in ("+idzs.toString().substring(1,idzs.toString().length()-1)+")";
+
+                    obj.put("data", Dhm.query(consulta));
+                }else{
+                    obj.put("data", new JSONArray());
+                }
+                
             } else if (obj.has("idz")) {
                 String consulta = "select "+selecttbcli+" ";
                 consulta += "from tbcli where tbcli.idz = " + obj.get("idz");
@@ -493,7 +514,7 @@ public class TbCli {
             int cant = clicod.getInt("cant");
             cant++;
 
-            String sclicod = clicod.getString("znom") + "-" + cant;
+            String sclicod = (clicod.has("znom")?clicod.getString("znom"):"") + "-" + cant;
 
             data.put("clicod", sclicod);
             data.put("usumod", "");
@@ -527,54 +548,29 @@ public class TbCli {
 
             String consulta = "" +
 
-                    "select tbcli.idcli, " +
-                    "( " +
-                    "    select count(dm_cabfac.idven) " +
-                    "    from dm_cabfac  " +
-                    "    where  dm_cabfac.clicod = tbcli.clicod     " +
-                    "    and dm_cabfac.vfec between '" + obj.getString("fecha_inicio") + "' and '"
-                    + obj.getString("fecha_fin") + "'\n" +
-                    "    and dm_cabfac.idven not in (\n" +
-                    "    select dm_cabfac.idven\n" +
-                    "    from dm_cabfac,\n" +
-                    "    tbven\n" +
-                    "    where tbven.idpeddm = dm_cabfac.idven)\n" +
+                    "select tbcli.idcli, \n" +
+                    "( \n" +
+                    " select count(dm_cabfac.idven) \n" +
+                    " from dm_cabfac \n" +
+                    " where dm_cabfac.clicod = tbcli.clicod \n" +
+                    " and dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and '"+obj.getString("fecha_fin")+"'\n"+
                     ") as  cantidad_pedidos, \n" +
-                    "( " +
-                    "    select sum(dm_detfac.vdpre*dm_detfac.vdcan)" +
-                    "    from dm_cabfac, dm_detfac  " +
-                    "    where  dm_cabfac.clicod = tbcli.clicod     " +
-                    "    and  dm_cabfac.idven = dm_detfac.idven " +
-                    "    and dm_cabfac.vfec between '" + obj.getString("fecha_inicio") + "' and '"
-                    + obj.getString("fecha_fin") + "'\n" +
-                    "   and dm_cabfac.idven not in (\n" +
-                    "   select dm_cabfac.idven\n" +
-                    "   from dm_cabfac,\n" +
-                    "   tbven\n" +
-                    "   where tbven.idpeddm = dm_cabfac.idven)\n" +
-                    ") as  monto_total_pedidos, \n" +
-                    "( " +
-                    "    select count(tbven.idven) " +
-                    "    from tbven " +
-                    "    where tbven.idcli = tbcli.idcli " +
-                    "    and tbven.vtipo in ('VF', 'VD') " +
-                    "    and tbven.vefa not in ('A') " +
-                    "    and tbven.vfec between '" + obj.getString("fecha_inicio") + "' and '"
-                    + obj.getString("fecha_fin") + "'\n" +
-                    ") as  cantidad_ventas, ";
+                    "( \n" +
+                    " select sum(dm_detfac.vdcan) \n" +
+                    " from dm_cabfac, dm_detfac \n" +
+                    " where dm_cabfac.clicod = tbcli.clicod \n" +
+                    " and dm_cabfac.idven = dm_detfac.idven \n" +
+                    " and dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and '"+obj.getString("fecha_fin")+"'\n"+
+                    ") as  cantidad_productos, \n" +
+                    "( \n" +
+                    " select sum(dm_detfac.vdcan*dm_detfac.vdpre) \n" +
+                    " from dm_cabfac, dm_detfac \n" +
+                    " where dm_cabfac.clicod = tbcli.clicod \n" +
+                    " and dm_cabfac.idven = dm_detfac.idven \n" +
+                    " and dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and '"+obj.getString("fecha_fin")+"'\n"+
+                    ") as  monto_pedidos \n" +
 
-            consulta += "( ";
-            consulta += "    select sum(tbvd.vdpre*tbvd.vdcan) ";
-            consulta += "        from tbven, tbvd ";
-            consulta += "    where tbven.idcli = tbcli.idcli ";
-            consulta += "    and tbven.vtipo in ('VF', 'VD') ";
-            consulta += "    and tbven.vefa not in ('A') ";
-            consulta += "    and tbven.idven = tbvd.idven ";
-            consulta += "    and tbven.vfec between '" + obj.getString("fecha_inicio") + "' and '"
-                    + obj.getString("fecha_fin") + "'\n";
-            consulta += ") as monto_total_ventas ";
-
-            consulta += "from tbcli " +
+                    "from tbcli \n" +
                     "where tbcli.idcli = " + obj.get("idcli");
 
             JSONArray data = Dhm.query(consulta);
