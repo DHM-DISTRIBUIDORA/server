@@ -83,43 +83,42 @@ public class TbPrd {
         SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
 
         try {
-            String consulta = "SELECT tbprd.prdcod, "+
-            "tbprd.prduxcdes, "+
-            "tbprd.idlinea, "+
-            "tbprd.prdcxu, "+
-            "tbprd.prduxd, "+
-            "tbprd.prdcor, "+
-            "tbprd.idprd, "+
-            "tbprd.prdunid, "+
-            "tbprd.prdpoficial, "+
-            "tbprd.prdnom, "+
-            "coalesce(sq1.stock, 0 ) as stock "+
-            "FROM "+
-            "tbprd  JOIN ( "+
-            "SELECT  tbprd.idprd, "+
-            "compras.cantidad-ventas.cantidad as stock "+
-            "FROM  "+
-            "( "+
-            "select SUM(tbvd.vdcan) as cantidad, "+
-            "tbvd.idprd "+
-            "from tbvd JOIN tbven on tbvd.idven = tbven.idven "+
-            "where  tbven.vfec <=  '"+formato.format(new Date())+"' "+
-            ""+almacen+
-            "group by tbvd.idprd "+
-            ") ventas, "+
-            "( "+
-            "select SUM(tbcd.cdcan) as cantidad, "+
-            "tbcd.idprd "+
-            "from tbcd, tbcom  "+
-            "where tbcom.idcom = tbcd.idcom "+
-            " and tbcom.cfec <=  '"+formato.format(new Date())+"' "+
-            " "+almacen+" "+
-            "group by tbcd.idprd "+
-            ") compras, "+
-            "tbprd "+
-            "where tbprd.idprd = ventas.idprd "+
-            "and tbprd.idprd = compras.idprd "+
-            ") sq1 ON tbprd.idprd = sq1.idprd ";
+            String consulta = "SELECT \n" + //
+                    "    tbprd.prdcod,\n" + //
+                    "    tbprd.prduxcdes,\n" + //
+                    "    tbprd.idlinea,\n" + //
+                    "    tbprd.prdcxu,\n" + //
+                    "    tbprd.prduxd,\n" + //
+                    "    tbprd.prdcor,\n" + //
+                    "    tbprd.idprd,\n" + //
+                    "    tbprd.prdunid,\n" + //
+                    "    tbprd.prdpoficial,\n" + //
+                    "    tbprd.prdnom,\n" + //
+                    "    COALESCE(compras.cantidad, 0)-COALESCE(ventas.cantidad, 0) AS stock\n" + //
+                    "FROM \n" + //
+                    "    tbprd\n" + //
+                    "LEFT JOIN \n" + //
+                    "    (\n" + //
+                    "        SELECT  tbvd.idprd,\n" + //
+                    "            SUM(tbvd.vdcan) AS cantidad\n" + //
+                    "        FROM tbvd \n" + //
+                    "        JOIN tbven ON tbvd.idven = tbven.idven\n" + //
+                    "        where  tbven.vfec <=  '"+formato.format(new Date())+"' "+
+                    ""+almacen+
+                    "        GROUP BY  tbvd.idprd\n" + //
+                    "    ) ventas ON tbprd.idprd = ventas.idprd\n" + //
+                    "LEFT JOIN \n" + //
+                    "    (\n" + //
+                    "        SELECT tbcd.idprd,\n" + //
+                    "            SUM(tbcd.cdcan) AS cantidad\n" + //
+                    "        FROM tbcd \n" + //
+                    "        JOIN tbcom ON tbcom.idcom = tbcd.idcom\n" + //
+                    "        where tbcom.cfec <=  '"+formato.format(new Date())+"' "+
+                    ""+almacen+
+                    "        GROUP BY tbcd.idprd\n" + //
+                    "    ) compras ON tbprd.idprd = compras.idprd;\n" + //
+                    "";
+
 
             obj.put("data", Dhm.query(consulta));
             obj.put("estado", "exito");

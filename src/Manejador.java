@@ -8,7 +8,9 @@ public class Manejador {
         if (session != null) {
             SConsole.log(session.getIdSession(), "\t|\t", obj.getString("component"), obj.getString("type"));
         } else {
-            SConsole.log("http-server", "-->", obj.getString("component"), obj.getString("type"));
+            if(!obj.getString("type").equals("onLocationChange")){
+                SConsole.log("http-server", "-->", obj.getString("component"), obj.getString("type"));
+            }
         }
         if (obj.isNull("component")) {
             return;

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
+import Servisofts.SPGConect;
 import Servisofts.SUtil;
 
 public class DmCabFac {
@@ -20,6 +21,9 @@ public class DmCabFac {
                 break;
             case "getPedidosVendedor":
                 getPedidosVendedor(obj, session);
+                break;
+            case "getPedidosVendedorDetalle":
+                getPedidosVendedorDetalle(obj, session);
                 break;
             case "getByKey":
                 getByKey(obj, session);
@@ -44,6 +48,9 @@ public class DmCabFac {
                 break;
             case "eliminar":
                 eliminar(obj, session);
+                break;
+            case "getAllPedidosCliente":
+                getAllPedidosCliente(obj, session);
                 break;
         }
     }
@@ -196,6 +203,64 @@ public class DmCabFac {
                     "and dm_cabfac.codvendedor = tbemp.empcod\n" + //
                     "group by tbemp.empnom, tbemp.empcod, tbemp.idemp";
             obj.put("data", Dhm.query(consulta));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void getPedidosVendedorDetalle(JSONObject obj, SSSessionAbstract session) {
+        try {
+            String consulta = "select dm_cabfac.*\n" + //
+                    "from dm_cabfac, tbemp\n" + //
+                    "where dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and  '"+obj.getString("fecha_fin")+"'\n" + //
+                    "and tbemp.idemp = "+obj.get("idemp")+"\n" + //
+                    "and dm_cabfac.codvendedor = tbemp.empcod\n";
+                    
+            obj.put("data", Dhm.query(consulta));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void getAllPedidosCliente(JSONObject obj, SSSessionAbstract session) {
+        try {
+            String consulta = "select dm_cabfac.*,\n" + //
+                    "(select sum(dm_detfac.vdcan) from dm_detfac where dm_detfac.idven = dm_cabfac.idven) cantidad,\n" + //
+                    "tbven.vdet,\n" + //
+                    "tbven.idven as idpeddm,\n" + //
+                    "(select sum(dm_detfac.vdcan*dm_detfac.vdpre) from dm_detfac where dm_detfac.idven = dm_cabfac.idven) monto\n" + //
+                    "from dm_cabfac, tbven\n" + //
+                    "where dm_cabfac.clicod = '"+obj.get("clicod")+"'\n" + //
+                    "and dm_cabfac.idven = tbven.idpeddm\n" + //
+                    "\n";
+
+            obj.put("data", Dhm.query(consulta));
+
+             consulta = "select tbcli.idcli\n" + //
+                    "from tbcli\n" + //
+                    "where tbcli.clicod = '"+obj.get("clicod")+"'\n";
+
+            JSONArray idvens  = Dhm.query(consulta);
+            int idcli = 0;
+            
+            if(idvens.length()>0) idcli = idvens.getJSONObject(0).getInt("idcli");
+            
+            if(idcli > 0){
+
+                consulta = "select jsonb_object_agg(visita_transportista.idven, to_json(visita_transportista.*))::json as json from visita_transportista where idcli ='"+idcli+"'";
+                obj.put("visitas", SPGConect.ejecutarConsultaObject(consulta));
+            }
+            
+            
+            
+
+            
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
@@ -360,17 +425,19 @@ public class DmCabFac {
             switch(obj.getJSONObject("data").getString("sync_type")){
                 case "insert":{
                     JSONObject dm_cabfac;
-                    JSONArray arr = Dhm.query("select max(idven) as idven from dm_cabfac");
+                    JSONArray arr = Dhm.query("select max(CONVERT(int,idven)) as idven from dm_cabfac");
                     int idven = arr.getJSONObject(0).getInt("idven");
 
-                    /*String consulta = "SET DATEFORMAT 'YMD';  select dm_cabfac.vhora\n" + //
-                            "from dm_cabfac\n" + //
-                            "where dm_cabfac.vfec = '"+obj.getJSONObject("data").getString("vfec").substring(0,10)+"'\n" + //
-                            "and dm_cabfac.codvendedor = '"+obj.getJSONObject("data").getString("codvendedor")+"'";*/
+                    String consulta = "select to_json(historico_clicod.*) as json\n" + //
+                            "from historico_clicod\n" + //
+                            "where historico_clicod.clicod_old = '"+obj.getJSONObject("data").getString("clicod")+"'";
 
-                 
-                    String consulta = "SET DATEFORMAT 'YMD'; \n";
+                    JSONObject historico_clicod = SPGConect.ejecutarConsultaObject(consulta);
+                    if(historico_clicod!= null &&  !historico_clicod.isEmpty()){
+                        obj.getJSONObject("data").put("clicod", historico_clicod.getString("clicod_new"));
+                    }
 
+                    consulta = "SET DATEFORMAT 'YMD'; \n";
                     dm_cabfac = obj.getJSONObject("data");
 
                     System.out.println("*******//////////////********** Pedido EXITOSO");
@@ -380,7 +447,14 @@ public class DmCabFac {
                     consulta += "insert into dm_cabfac (vlongitud,vhora,vlatitud,direccion,vtipa,vzona,clicod,vdes,idven,codvendedor,razonsocial,vpla,nit,tipocliente,vfec,telefonos,vobs,nombrecliente,vtipo)";
                     consulta += " values ";
                     consulta += " ("+dm_cabfac.get("vlongitud")+", '"+dm_cabfac.get("vhora")+"',"+dm_cabfac.get("vlatitud")+",'"+(dm_cabfac.has("direccion")?dm_cabfac.get("direccion"):"")+"',0,'"+dm_cabfac.get("vzona")+"','"+dm_cabfac.get("clicod")+"',0,"+idven+",'"+dm_cabfac.get("codvendedor")+"','"+dm_cabfac.get("razonsocial")+"',0,'"+dm_cabfac.get("nit")+"','"+dm_cabfac.get("tipocliente")+"','"+dm_cabfac.get("vfec")+"','"+(dm_cabfac.has("telefonos")?dm_cabfac.get("telefonos"):"")+"','"+dm_cabfac.get("vobs")+"','"+dm_cabfac.get("nombrecliente")+"',1);\n";
-                        
+                    
+                    JSONArray cab = Dhm.query(consulta);
+                    if(cab == null){
+                        throw new Exception("Error al insertar el dm_cabfac");
+                    }
+
+                    consulta = "";
+
                     if(dm_cabfac.has("detalle") && !dm_cabfac.isNull("detalle")){    
                         JSONObject detalle;
                         
@@ -391,7 +465,6 @@ public class DmCabFac {
                         }
                     }
 
-                    
                     Dhm.query(consulta);
 
                     //System.out.println("registrando dm_cabfac .. "+new Date());

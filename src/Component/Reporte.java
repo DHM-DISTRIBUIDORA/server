@@ -26,6 +26,9 @@ public class Reporte {
             case "getPedidosRebotados":
                 getPedidosRebotados(obj);
                 break;
+            case "getPedidosRebotadosVendedor":
+                getPedidosRebotadosVendedor(obj);
+                break;
         }
     }
 
@@ -51,12 +54,65 @@ public class Reporte {
 
 
             consulta = "select tbemp.empnom, tbemp.empcod, tbemp.idemp,\n" + //
-                        "count(tbven.idven) cantidad\n" + //
-                        "from tbven,\n" + //
-                        " tbemp\n" + //
-                        "where tbven.idemp = tbemp.idemp\n" + //
-                        "and tbven.idven in ("+sidvens+")\n" + //
+                        "count(tabla.idven) as cantidad, \n" + //
+                        "sum(tabla.cantidad) as cantidad_producto, \n" + //
+                        "sum(tabla.monto) as monto_producto \n" + //
+                        "from tbemp, (\n" + //
+                        "select tbven.idven,\n" + //
+                        "tbven.idemp,\n" + //
+                        "(select sum(dm_detfac.vdcan) from dm_detfac where dm_detfac.idven = dm_cabfac.idven) as cantidad,\n" + //
+                        "(select sum(dm_detfac.vdcan*dm_detfac.vdpre) from dm_detfac where dm_cabfac.idven = dm_detfac.idven) as monto\n" + //
+                        "from tbven, dm_cabfac\n" + //
+                        "where tbven.idven in ("+sidvens+")\n" + //
+                        "and tbven.idpeddm = dm_cabfac.idven\n" + //
+                        
+                        " ) tabla\n" + //
+                        "where tabla.idemp = tbemp.idemp\n" + //
                         "group by tbemp.empnom, tbemp.empcod, tbemp.idemp";
+
+            obj.put("data", Dhm.query(consulta));
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        
+    }
+
+    public static void getPedidosRebotadosVendedor(JSONObject obj){
+
+        try{
+            String consulta = "SELECT array_to_json(array_agg(visita_transportista.idven)) as json\n" + //
+                "FROM public.visita_transportista\n" + //
+                "where tipo not in ('ENTREGADO', 'RECIBIO CONFORME')\n" + //
+                "and fecha between '"+obj.getString("fecha_inicio")+"' and  '"+obj.getString("fecha_fin")+"'\n";
+
+            JSONArray idvens = SPGConect.ejecutarConsultaArray(consulta);
+
+            if(idvens.length()==0){
+                obj.put("estado", "error");
+                obj.put("error", "No existen pedidos rebotados esta fecha");
+                return;
+            }
+
+            String sidvens = idvens.toString();
+            sidvens= sidvens.substring(1, sidvens.length()-1);
+            sidvens=sidvens.replaceAll("\"", "");
+
+
+            consulta = "select tbven.*,\n" + //
+                        "tbcli.clicod,\n" + //
+                        "tbcli.clinom,\n" + //
+                        "(select sum(dm_detfac.vdcan) from dm_detfac where dm_detfac.idven = dm_cabfac.idven) as cantidad,\n" + //
+                        "(select sum(dm_detfac.vdcan*dm_detfac.vdpre) from dm_detfac where dm_detfac.idven = dm_cabfac.idven) as monto\n" + //
+                        "from tbven,\n" + //
+                        " tbemp,\n" + //
+                        " dm_cabfac,\n" + //
+                        " tbcli\n" + //
+                        "where tbven.idemp = tbemp.idemp\n" + //
+                        "and tbven.idpeddm = dm_cabfac.idven\n" + //
+                        "and tbven.idcli = tbcli.idcli\n" + //
+                        "and tbemp.idemp = "+obj.get("idemp")+"\n" + //
+                        "and tbven.idven in ("+sidvens+")\n" + //
+                        "";
 
             obj.put("data", Dhm.query(consulta));
         }catch(Exception e){

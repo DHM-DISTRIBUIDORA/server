@@ -2,19 +2,12 @@ package Component;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.UUID;
-
 import javax.xml.parsers.ParserConfigurationException;
-
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xml.sax.SAXException;
-
 import Server.SSSAbstract.SSSessionAbstract;
-import Servisofts.SConsole;
 import Servisofts.SPGConect;
 import Servisofts.SUtil;
 import util.GPX;
@@ -168,7 +161,7 @@ public class background_location {
     }
 
     public static void onLocationChangeSoloTabla(JSONObject obj, SSSessionAbstract session) {
-        System.out.println("##########" + obj.getJSONObject("data").get("tipo") + "#############");
+        //System.out.println("##########" + obj.getJSONObject("data").get("tipo") + "#############");
         try {
             JSONObject location = SPGConect.ejecutarConsultaObject("select get_by('" +
                     COMPONENT + "','key_usuario','"

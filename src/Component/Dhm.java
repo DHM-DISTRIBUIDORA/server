@@ -2,7 +2,6 @@ package Component;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 
 import org.json.JSONArray;
@@ -190,7 +189,8 @@ public class Dhm {
         }
 
     }
-
+    
+    
     public static void getPedidosProveedor(JSONObject obj, SSSessionAbstract session) {
 
         String empCod = "";
@@ -388,6 +388,10 @@ public class Dhm {
                     
                     int idz = zona_empleado.getJSONArray("zonas").getInt(j);
                     JSONObject vendedor = empleados.getJSONObject(key);
+
+                    if(!zonas.has(idz+"")){
+                        continue;
+                    }
 
                     vendedor.put("cantidad_clientes", vendedor.getInt("cantidad_clientes")+zonas.getJSONObject(idz+"").getInt("clientes"));
                     vendedor.put("cantidad_zonas", vendedor.getInt("cantidad_zonas")+1);

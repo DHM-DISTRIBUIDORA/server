@@ -1,5 +1,8 @@
 package Component;
 
+import java.util.Date;
+import java.util.UUID;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
@@ -19,6 +22,9 @@ public class TbCli {
                 break;
             case "getByKeys":
                 getByKeys(obj, session);
+                break;
+            case "getByCliCod":
+                getByCliCod(obj, session);
                 break;
             case "getByKey":
                 getByKey(obj, session);
@@ -159,8 +165,7 @@ public class TbCli {
                             cantCliZonas.put(tbcli.get("idz") + "", clicods.getJSONObject(0));
                         }
 
-                        cantCliZonas.getJSONObject(tbcli.get("idz") + "").put("cant",
-                                cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+                        cantCliZonas.getJSONObject(tbcli.get("idz") + "").put("cant", cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
 
                         if(cantCliZonas.getJSONObject(tbcli.get("idz") + "").has("znom")){
                             tbcli.put("clicod", cantCliZonas.getJSONObject(tbcli.get("idz") + "").getString("znom") + " - "
@@ -205,40 +210,86 @@ public class TbCli {
 
                 switch(obj.getJSONObject("data").getString("sync_type")){
                     case "insert":{
+
+                        if(obj.has("key_usuario")){
+                            JSONObject historico_cli_edit = new JSONObject();
+                            historico_cli_edit.put("key", SUtil.uuid());
+                            historico_cli_edit.put("fecha_on", SUtil.now());
+                            historico_cli_edit.put("estado", 1);
+                            historico_cli_edit.put("key_usuario", obj.getString("key_usuario"));
+                            
+                            historico_cli_edit.put("idvendedor", obj.get("idvendedor"));
+                            historico_cli_edit.put("idtransportista", obj.get("idtransportista"));
+
+                            historico_cli_edit.put("tipo", "insert");
+                            historico_cli_edit.put("data", obj.getJSONObject("data"));
+                            try {
+                                SPGConect.insertArray("historico_cli_edit", new JSONArray().put(historico_cli_edit));
+                              } catch (Exception e) {
+                                 e.printStackTrace();
+                              }
+                            
+                        }
+
                         JSONObject cantCliZonas = new JSONObject();
                         JSONArray arr = Dhm.query("select max(" + PK + ") as id from " + COMPONENT);
                         int id = arr.getJSONObject(0).getInt("id");
                         JSONObject tbcli = obj.getJSONObject("data");
                         id++;
                         tbcli.put(PK, id);
-                        if (tbcli.has("idz") && !tbcli.isNull("idz")) {
+                        tbcli.put("clitipdoc", "Documento");
+                        tbcli.put("cliforpag", "Contado");
 
-                            if (!cantCliZonas.has(tbcli.get("idz") + "") && cantCliZonas.isNull(tbcli.get("idz") + "")) {
+                        String consulta = "select tabla.cant,\n" + //
+                                " tabla.znom\n" + //
+                                "from (\n" + //
+                                "select tbzon.znom,\n" + //
+                                "count(idcli) as cant\n" + //
+                                "from tbcli,\n" + //
+                                "tbzon\n" + //
+                                "where tbzon.idz = " + tbcli.get("idz") + "\n" + //
+                                "and tbzon.idz = tbcli.idz\n" + //
+                                "group by tbzon.znom\n" + //
+                                ") tabla";
+                        JSONArray clicods = Dhm.query(consulta);
 
-                                String consulta = "select tabla.cant,\n" + //
-                                        " tabla.znom\n" + //
-                                        "from (\n" + //
-                                        "select tbzon.znom,\n" + //
-                                        "count(idcli) as cant\n" + //
-                                        "from tbcli,\n" + //
-                                        "tbzon\n" + //
-                                        "where tbzon.idz = " + tbcli.get("idz") + "\n" + //
-                                        "and tbzon.idz = tbcli.idz\n" + //
-                                        "group by tbzon.znom\n" + //
-                                        ") tabla";
-                                JSONArray clicods = Dhm.query(consulta);
+                        cantCliZonas.put(tbcli.get("idz") + "", clicods.getJSONObject(0));
+                    
 
-                                cantCliZonas.put(tbcli.get("idz") + "", clicods.getJSONObject(0));
-                            }
+                        cantCliZonas.getJSONObject(tbcli.get("idz") + "").put("cant", cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+                        String znom = "nozone";
 
-                            cantCliZonas.getJSONObject(tbcli.get("idz") + "").put("cant",
-                                    cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+                        String old_clicod = tbcli.getString("clicod");
 
-                            tbcli.put("clicod", cantCliZonas.getJSONObject(tbcli.get("idz") + "").getString("znom") + " - "
-                                    + cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+                        JSONObject historico_clicod = SPGConect.ejecutarConsultaObject("select to_json(historico_clicod.*) as json from historico_clicod where historico_clicod.clicod_old = '"+old_clicod+"'");
+
+                        if(historico_clicod!= null && !historico_clicod.isEmpty()){
+                            obj.put("estado", "exito");
+
+                            obj.getJSONObject("data").put("clicod", historico_clicod.getString("clicod_new"));
+                            Dhm.editar(COMPONENT, PK, obj.getJSONObject("data"));
+
+                            obj.put("data", obj.getJSONObject("data"));
+                            return;
                         }
-                        Dhm.registro(COMPONENT, PK, obj.getJSONObject("data"));
 
+                        try {
+                            znom = cantCliZonas.getJSONObject(tbcli.get("idz") + "").getString("znom");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        tbcli.put("clicod",  znom+ " - " + (cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1));
+
+                        String new_clicod = tbcli.getString("clicod");
+
+                        Dhm.registro(COMPONENT, PK, tbcli);
+
+                        historico_clicod = new JSONObject();
+                        historico_clicod.put("key", UUID.randomUUID());
+                        historico_clicod.put("clicod_old", old_clicod);
+                        historico_clicod.put("clicod_new", new_clicod);
+                        historico_clicod.put("fecha_on", SUtil.formatTimestamp(new Date()));
+                        SPGConect.insertObject("historico_clicod", historico_clicod);
 
                         obj.getJSONObject("data").remove("sync_type");
                         obj.put("estado", "exito");
@@ -246,6 +297,42 @@ public class TbCli {
                         return;
                     }
                     case "update":{
+                        
+                        if(obj.has("key_usuario")){
+                            JSONObject historico_cli_edit = new JSONObject();
+                            historico_cli_edit.put("key", SUtil.uuid());
+                            historico_cli_edit.put("fecha_on", SUtil.now());
+                            historico_cli_edit.put("estado", 1);
+                            historico_cli_edit.put("key_usuario", obj.getString("key_usuario"));
+                            
+                            historico_cli_edit.put("idvendedor", obj.get("idvendedor"));
+                            historico_cli_edit.put("idtransportista", obj.get("idtransportista"));
+
+                            historico_cli_edit.put("tipo", "edit");
+                            historico_cli_edit.put("data", obj.getJSONObject("data"));
+                            try {
+                                System.out.println(historico_cli_edit.toString());
+                              SPGConect.insertArray("historico_cli_edit", new JSONArray().put(historico_cli_edit));
+                            } catch (Exception e) {
+                               e.printStackTrace();
+                            }
+                        }
+
+                        /*
+                         * WARNING
+                         * Desde la app es posible que nos está llegando el update para el cliente 001230351654 que es un cliente temporal en
+                         * la base de datos del celular pero el cliente ya se registró y se le cambió el código por esto no lo va a encontrar.
+                         * 
+                         * Para evitar este problema verificamos si el codigo del cliente se encuentra en la base de datos de historico y obtenemos el nuevo.
+                         */
+
+                        JSONObject historico_clicod = SPGConect.ejecutarConsultaObject("select to_json(historico_clicod.*) as json from historico_clicod where historico_clicod.clicod_old = '"+obj.getJSONObject("data").get("clicod")+"'");
+
+                        if(historico_clicod!=null && !historico_clicod.isEmpty()){
+                            obj.getJSONObject("data").put("clicod", historico_clicod.getString("clicod_new"));
+                        }
+                        
+
                         Dhm.editar(COMPONENT, PK, obj.getJSONObject("data"));
                         obj.getJSONObject("data").remove("sync_type");
                         obj.put("estado", "exito");
@@ -253,6 +340,27 @@ public class TbCli {
                         return;
                     }
                     case "delete":{
+                        if(obj.has("key_usuario")){
+                            JSONObject historico_cli_edit = new JSONObject();
+                            historico_cli_edit.put("key", SUtil.uuid());
+                            historico_cli_edit.put("fecha_on", SUtil.now());
+                            historico_cli_edit.put("key_usuario", obj.getString("key_usuario"));
+
+                            historico_cli_edit.put("idvendedor", obj.get("idvendedor"));
+                            historico_cli_edit.put("idtransportista", obj.get("idtransportista"));
+
+                            historico_cli_edit.put("estado", 1);
+                            historico_cli_edit.put("tipo", "delete");
+                            historico_cli_edit.put("data", obj.getJSONObject("data"));
+                            try {
+                                System.out.println(historico_cli_edit.toString());
+                                SPGConect.insertArray("historico_cli_edit", new JSONArray().put(historico_cli_edit));
+                              } catch (Exception e) {
+                                  // TODO: handle exception
+                                  e.printStackTrace();
+                              }
+                        }
+
                         Dhm.eliminar(COMPONENT, PK, obj.getJSONObject("data").get(PK)+"");
                         obj.getJSONObject("data").remove("sync_type");
                         obj.put("estado", "exito");
@@ -424,6 +532,18 @@ public class TbCli {
             // e.printStackTrace();
         }
     }
+    
+    public static void getByCliCod(JSONObject obj, SSSessionAbstract session) {
+        try{
+            String consulta = "select * from tbcli where tbcli.clicod = '"+obj.get("clicod")+"' order by idcli";
+            obj.put("data", Dhm.query(consulta));
+            obj.put("estado", "exito");
+        }catch(Exception e){
+            e.printStackTrace();
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+        }
+    }
 
     public static void getByKeys(JSONObject obj, SSSessionAbstract session) {
         try {
@@ -514,6 +634,8 @@ public class TbCli {
             int cant = clicod.getInt("cant");
             cant++;
 
+            String old_clicod  = data.getString("clicod");
+
             String sclicod = (clicod.has("znom")?clicod.getString("znom"):"") + "-" + cant;
 
             data.put("clicod", sclicod);
@@ -521,6 +643,15 @@ public class TbCli {
             data.put("empest", 1);
 
             Dhm.registro(COMPONENT, PK, data);
+
+            String new_clicod  = data.getString("clicod");
+
+            JSONObject historico_clicod = new JSONObject();
+            historico_clicod.put("clicod_old", old_clicod);
+            historico_clicod.put("clicod_new", new_clicod);
+            historico_clicod.put("fecha_on", SUtil.formatTimestamp(new Date()));
+            SPGConect.insertObject("historico_clicod", historico_clicod);
+
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
@@ -535,6 +666,7 @@ public class TbCli {
             data.put("fecmod", SUtil.now());
             data.put("usumod", "Prueba");
             Dhm.editar(COMPONENT, PK, data);
+
             obj.put("estado", "exito");
         } catch (Exception e) {
             obj.put("estado", "error");
