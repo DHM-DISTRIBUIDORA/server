@@ -62,6 +62,16 @@ public class VisitaVendedor {
             // insertando datos nuevos
 
             if (obj.has("data") && !obj.isNull("data")) {
+
+                String consulta = "select to_json(historico_clicod.*) as json\n" + //
+                "from historico_clicod\n" + //
+                "where historico_clicod.clicod_old = '"+obj.getJSONObject("data").getString("idcli")+"'";
+
+                JSONObject historico_clicod = SPGConect.ejecutarConsultaObject(consulta);
+                if(historico_clicod!= null &&  !historico_clicod.isEmpty()){
+                    obj.getJSONObject("data").put("idcli", historico_clicod.getString("clicod_new"));
+                }
+
                 
                 obj.getJSONObject("data").put("estado", 1);
                 obj.getJSONObject("data").put("fecha_on", SUtil.now());

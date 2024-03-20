@@ -82,6 +82,8 @@ public class TbEmp {
                     "tbven.vobs, \n" + //
                     "tbcli.clitel, \n" + //
                     "tbcli.idcli, \n" + //
+                    "tbemp.empnom, \n" + //                    
+                    "tbemp.idemp, \n" + //                    
                     "tbcli.clicod AS codigo, \n" + //
                     "zcod AS zona, \n" + //
                     "tbven.vtipo AS tipo, \n" + //
@@ -105,8 +107,8 @@ public class TbEmp {
                     ") AS DF ON tbven.idven=DF.idven \n" + //
                     "\n" + //
                     //"WHERE tbven.vtipo LIKE 'V%' AND vdest=2 AND tbven.vfec='"+obj.get("fecha")+"'  AND tbtg.idtg="+tbtg.get("idtg")+"  AND idalm=1   \n" + //
-                    "WHERE tbven.vtipo LIKE 'V%' AND tbven.vfec='"+obj.get("fecha")+"'  AND tbtg.idtg="+tbtg.get("idtg")+"  AND idalm=1   \n" + //
-                    "GROUP BY tbven.idven, tbven.vtipp,tbcli.idcli,tbven.vfec,vnit, tbcli.clicod, tbven.vobs,tbcli.clitel, tbcli.clilat, tbcli.clilon, zcod, tbven.vtipo, vdoc, clinom, vcli, TimpR, tcanven, VR.vtipp,Tdesc, vdesc, zcod, clidir, clidirnro, cliadic , clilat, clilon  ORDER BY zcod, vdoc  ";
+                    "WHERE tbven.vtipo LIKE 'V%' AND tbven.vfec='"+obj.get("fecha")+"'  AND tbtg.idtg="+tbtg.get("idtg")+"   \n" + //
+                    "GROUP BY tbemp.idemp, tbemp.empnom, tbven.idven, tbven.vtipp,tbcli.idcli,tbven.vfec,vnit, tbcli.clicod, tbven.vobs,tbcli.clitel, tbcli.clilat, tbcli.clilon, zcod, tbven.vtipo, vdoc, clinom, vcli, TimpR, tcanven, VR.vtipp,Tdesc, vdesc, zcod, clidir, clidirnro, cliadic , clilat, clilon  ORDER BY zcod, vdoc  ";
 
             obj.put("data", Dhm.query(consulta));
 
@@ -128,7 +130,7 @@ public class TbEmp {
                     ") AS DF ON tbven.idven=DF.idven \n" + //
                     "\n" + //
                     //"WHERE tbven.vtipo LIKE 'V%' AND tbvd.vdest=2 AND tbven.vfec='"+obj.get("fecha")+"'  AND tbtg.idtg="+tbtg.get("idtg")+"  AND tbvd.idalm=1   \n" + //
-                    "WHERE tbven.vtipo LIKE 'V%' AND tbven.vfec='"+obj.get("fecha")+"'  AND tbtg.idtg="+tbtg.get("idtg")+"  AND tbvd.idalm=1   \n" + //
+                    "WHERE tbven.vtipo LIKE 'V%' AND tbven.vfec='"+obj.get("fecha")+"'  AND tbtg.idtg="+tbtg.get("idtg")+"  \n" + //
                     "GROUP BY  tbvd.idvd, tbvd.idprd, tbvd.vdcan, tbvd.vdpre, tbvd.idven   ";
 
             obj.put("detalle", Dhm.query(consulta));

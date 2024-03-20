@@ -22,6 +22,9 @@ public class DmCabFac {
             case "getPedidosVendedor":
                 getPedidosVendedor(obj, session);
                 break;
+            case "getPedidosTransportista":
+                getPedidosTransportista(obj, session);
+                break;
             case "getPedidosVendedorDetalle":
                 getPedidosVendedorDetalle(obj, session);
                 break;
@@ -190,6 +193,28 @@ public class DmCabFac {
     }
 
     public static void getPedidosVendedor(JSONObject obj, SSSessionAbstract session) {
+        try {
+            String consulta = "select tbemp.empnom, tbemp.empcod, tbemp.idemp,\n" + //
+                    "sum(case when dm_cabfac.vobs like '%SAPP%' then 1 else 0 end) cantidad_ss,\n" + //
+                    "sum(case when dm_cabfac.vobs not like '%SAPP%' then 1 else 0 end) cantidad_otros,\n" + //
+                    "count(dm_cabfac.idven) cantidad,\n" + //
+                    "max(cast(dm_cabfac.vfec as DATEtime)+cast(dm_cabfac.vhora as TIME)) fecha_ultimo,\n" + //
+                    "min(cast(dm_cabfac.vfec as DATEtime)+cast(dm_cabfac.vhora as TIME)) fecha_primero\n" + //
+                    "from dm_cabfac,\n" + //
+                    " tbemp\n" + //
+                    "where dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and  '"+obj.getString("fecha_fin")+"'\n" + //
+                    "and dm_cabfac.codvendedor = tbemp.empcod\n" + //
+                    "group by tbemp.empnom, tbemp.empcod, tbemp.idemp";
+            obj.put("data", Dhm.query(consulta));
+            obj.put("estado", "exito");
+        } catch (Exception e) {
+            obj.put("estado", "error");
+            obj.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void getPedidosTransportista(JSONObject obj, SSSessionAbstract session) {
         try {
             String consulta = "select tbemp.empnom, tbemp.empcod, tbemp.idemp,\n" + //
                     "sum(case when dm_cabfac.vobs like '%SAPP%' then 1 else 0 end) cantidad_ss,\n" + //
@@ -409,6 +434,16 @@ public class DmCabFac {
         }
     }
 
+    public static JSONObject validarDuplicidadVenta(String clicod, String fecha){
+        String consulta = "select  *\n" + //
+                        "from dm_cabfac\n" + //
+                        "where clicod = '"+clicod+"'\n" + //
+                        "and CONVERT(CHAR(19),cast(dm_cabfac.vfec as DATEtime)+cast(dm_cabfac.vhora as TIME), 120) = '"+fecha+"'";
+        JSONArray json = Dhm.query(consulta);
+        if(json.length()>0) return json.getJSONObject(0);
+        else return null;
+    }
+
     public static void save(JSONObject obj, SSSessionAbstract session) {
         try {
             
@@ -443,10 +478,18 @@ public class DmCabFac {
                     System.out.println("*******//////////////********** Pedido EXITOSO");
                     idven++;
 
+                    if(validarDuplicidadVenta(dm_cabfac.get("clicod")+"", dm_cabfac.get("vfec")+"")!=null){
+                        obj.put("data", obj.getJSONObject("data"));
+                        obj.put("estado", "exito");
+                        return;
+                    };
+
                     dm_cabfac.put("idven", idven+"");
                     consulta += "insert into dm_cabfac (vlongitud,vhora,vlatitud,direccion,vtipa,vzona,clicod,vdes,idven,codvendedor,razonsocial,vpla,nit,tipocliente,vfec,telefonos,vobs,nombrecliente,vtipo)";
                     consulta += " values ";
                     consulta += " ("+dm_cabfac.get("vlongitud")+", '"+dm_cabfac.get("vhora")+"',"+dm_cabfac.get("vlatitud")+",'"+(dm_cabfac.has("direccion")?dm_cabfac.get("direccion"):"")+"',0,'"+dm_cabfac.get("vzona")+"','"+dm_cabfac.get("clicod")+"',0,"+idven+",'"+dm_cabfac.get("codvendedor")+"','"+dm_cabfac.get("razonsocial")+"',0,'"+dm_cabfac.get("nit")+"','"+dm_cabfac.get("tipocliente")+"','"+dm_cabfac.get("vfec")+"','"+(dm_cabfac.has("telefonos")?dm_cabfac.get("telefonos"):"")+"','"+dm_cabfac.get("vobs")+"','"+dm_cabfac.get("nombrecliente")+"',1);\n";
+
+                    
                     
                     JSONArray cab = Dhm.query(consulta);
                     if(cab == null){

@@ -3,12 +3,13 @@
     "notification": true,
     "roles_permisos": true,
     "usuario": true,
-    "geolocation": true
+    "geolocation": true,
+    "status": "desconectado"
   },
   "PostgreSQL": {
     "host": "jdbc:postgresql://192.168.5.49:5432/servisofts.dhm",
     "status": "exito"
   },
   "- SLog": "RealTime Log from server Servisofts",
-  "- Fecha": "2024-02-29T01:00:30.000572"
+  "- Fecha": "2024-03-19T22:56:11.000128"
 }

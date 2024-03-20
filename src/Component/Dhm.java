@@ -431,12 +431,14 @@ public class Dhm {
                     "SELECT tbtg.idemp,  \n" + //
                     "tbemp.empnom, \n" + //
                     "tbemp.empcod, \n" + //
+                    "count(distinct emp.idemp) as cantidad_vendedores,\n" + //
                     "count(tbven.idven) as total_pedidos,\n" + //
                     "sum(isnull(vr.TimpR,0)) as monto_productos,\n" + //
                     "sum(isnull(vr.Tcanven,0)) as cantidad_productos\n" + //
                     "\n" + //
                     "--sum(vr.Tcanven) as cantidad_productos \n" + //
                     "FROM tbven LEFT JOIN tbtg ON tbven.idtg=tbtg.idtg \n" + //
+                    "LEFT JOIN tbemp emp ON tbven.idemp=emp.idemp \n" + //
                     "LEFT JOIN tbemp ON tbtg.idemp=tbemp.idemp \n" + //
                     "LEFT JOIN tbcli ON tbven.idcli=tbcli.idcli \n" + //
                     "LEFT JOIN ( \n" + //
