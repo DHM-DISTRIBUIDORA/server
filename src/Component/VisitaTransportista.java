@@ -42,6 +42,17 @@ public class VisitaTransportista {
 
             if (obj.has("data") && !obj.isNull("data")) {
                 
+
+                JSONObject data = obj.getJSONObject("data");
+                if(data.has("sync_type") && !data.isNull("sync_type")){
+                    if(data.getString("sync_type").equals("update")){
+                        SPGConect.editObject(COMPONENT, obj.getJSONObject("data"));
+                        obj.getJSONObject("data").remove("sync_type");
+                        obj.put("estado", "exito");
+                        obj.put("data", obj.getJSONObject("data"));
+                        return;
+                    }
+                }
                 obj.getJSONObject("data").put("estado", 1);
                 obj.getJSONObject("data").put("fecha_on", SUtil.now());
                 SPGConect.insertObject(COMPONENT, obj.getJSONObject("data"));

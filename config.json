@@ -24,7 +24,7 @@
         "puerto": 5432,
         "pass": "postgres",
         "ip": "192.168.5.49",
-        "bd_name": "servisofts.dhm",
+        "bd_name": "servisofts.dhm2",
         "user": "postgres"
     },
     "nombre": "dhm",

@@ -50,18 +50,26 @@ public class TbPrd {
 
     public static void getProductosVendidos(JSONObject obj, SSSessionAbstract session) {
         try {
+            String filtro = "";
+
+            if(obj.has("idemp")){
+                filtro = "and tbven.idemp = "+obj.getInt("idemp")+"\n";
+            }
+
             obj.put("data", Dhm.query("select sum(tbvd.vdcan) as cantidad,\n" + //
                     "tbprd.prdnom,\n" + //
                     "tbvd.idprd,\n" + //
                     "tbprd.prdcod,\n" + //
-                    "sum(tbvd.vdpre) as monto\n" +
+                    "sum(tbvd.vdpre*tbvd.vdcan) as monto\n" +
                     "from tbven,\n" + //
                     "tbvd,\n" + //
                     "tbprd\n" + //
                     "where vtipo in ('VF', 'VD')\n" + //
                     "and tbvd.idven = tbven.idven\n" + //
                     "and tbven.vfec between '"+obj.getString("fecha_inicio")+"' and '"+obj.getString("fecha_fin")+"'\n" + //
-                    "and tbprd.idprd = tbvd.idprd\n" + //
+                    "and tbprd.idprd = tbvd.idprd\n" + filtro +//
+                    
+                    
                     "group by tbprd.prdnom,\n" + //
                     "tbvd.idprd, tbprd.prdcod")); 
             

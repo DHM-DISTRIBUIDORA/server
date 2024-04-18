@@ -198,11 +198,26 @@ public class DmCabFac {
                     "sum(case when dm_cabfac.vobs like '%SAPP%' then 1 else 0 end) cantidad_ss,\n" + //
                     "sum(case when dm_cabfac.vobs not like '%SAPP%' then 1 else 0 end) cantidad_otros,\n" + //
                     "count(dm_cabfac.idven) cantidad,\n" + //
+                    "sum(detalle.monto) as monto,\n" + //
                     "max(cast(dm_cabfac.vfec as DATEtime)+cast(dm_cabfac.vhora as TIME)) fecha_ultimo,\n" + //
                     "min(cast(dm_cabfac.vfec as DATEtime)+cast(dm_cabfac.vhora as TIME)) fecha_primero\n" + //
                     "from dm_cabfac,\n" + //
-                    " tbemp\n" + //
+                    " tbemp,\n" + //
+
+                    "( \n"+
+                    "    select dm_cabfac.idven, \n"+
+                    "    sum(dm_detfac.vdpre*dm_detfac.vdcan) as monto \n"+
+                    "    from dm_cabfac, dm_detfac \n"+
+                    "    where dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and  '"+obj.getString("fecha_fin")+"'\n" + //
+                    "    and dm_cabfac.idven = dm_detfac.idven \n"+
+                    "    group by dm_cabfac.idven \n"+
+                    "         \n"+
+                    ") detalle \n"+
+
                     "where dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and  '"+obj.getString("fecha_fin")+"'\n" + //
+
+                    "and dm_cabfac.idven = detalle.idven\n" + //
+
                     "and dm_cabfac.codvendedor = tbemp.empcod\n" + //
                     "group by tbemp.empnom, tbemp.empcod, tbemp.idemp";
             obj.put("data", Dhm.query(consulta));
@@ -238,10 +253,20 @@ public class DmCabFac {
 
     public static void getPedidosVendedorDetalle(JSONObject obj, SSSessionAbstract session) {
         try {
-            String consulta = "select dm_cabfac.*\n" + //
-                    "from dm_cabfac, tbemp\n" + //
+            String consulta = "select dm_cabfac.*, detalle.monto\n" + //
+                    "from dm_cabfac, tbemp,\n" + //
+                    "( \n"+
+                    "    select dm_cabfac.idven, \n"+
+                    "    sum(dm_detfac.vdpre*dm_detfac.vdcan) as monto \n"+
+                    "    from dm_cabfac, dm_detfac \n"+
+                    "    where dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and  '"+obj.getString("fecha_fin")+"'\n" + //
+                    "    and dm_cabfac.idven = dm_detfac.idven \n"+
+                    "    group by dm_cabfac.idven \n"+
+                    "         \n"+
+                    ") detalle \n"+
                     "where dm_cabfac.vfec between '"+obj.getString("fecha_inicio")+"' and  '"+obj.getString("fecha_fin")+"'\n" + //
                     "and tbemp.idemp = "+obj.get("idemp")+"\n" + //
+                    "and dm_cabfac.idven = detalle.idven\n" + //
                     "and dm_cabfac.codvendedor = tbemp.empcod\n";
                     
             obj.put("data", Dhm.query(consulta));

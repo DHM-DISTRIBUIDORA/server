@@ -44,6 +44,9 @@ public class Dhm {
             case "getEntregasTransportista":
                 getEntregasTransportista(obj, session);
                 break;
+            case "getMapaCalor":
+                getMapaCalor(obj, session);
+                break;
         }
     }
     public static void getEntregasTransportista(JSONObject obj, SSSessionAbstract session) {
@@ -460,7 +463,7 @@ public class Dhm {
             "from (\n"+
             "select  \n"+
             "visita_transportista.idemp,\n"+
-            "count(visita_transportista.key) as visitas,\n"+
+            "count( visita_transportista.key) as visitas,\n"+
             "sum(case when tipo = 'ENTREGADO' then monto else 0 end) as monto_visitas_exitosas,\n" + //
             "sum(case when tipo != 'ENTREGADO' then monto else 0 end) as monto_visitas_fallidas,\n" + //
             "sum(case when tipo = 'ENTREGADO' then 1 else 0 end) as visitas_exitosas,\n" + //
@@ -989,5 +992,36 @@ public class Dhm {
         }
         Http.send_(url, consulta, apiKey);
         return true;
+    }
+
+    public static void getMapaCalor(JSONObject obj, SSSessionAbstract session) {
+
+        String filtros = "";
+        if(obj.has("idlinea")) filtros += "and tbprd.idlinea in ("+obj.get("idlinea")+")\n";
+        if(obj.has("idprd")) filtros += "and tbprd.idprd in ( "+obj.get("idprd")+" )\n";
+        if(obj.has("codvendedor")) filtros += "and dm_cabfac.codvendedor in ( "+obj.get("codvendedor")+" )\n";
+        if(obj.has("idemp")) filtros += "and tbven.idemp in ( "+obj.get("idemp")+" )\n";
+
+        String consulta = "SET DATEFORMAT 'YMD';  \n"+
+        "select  \n"+        
+        "	tbcli.clilat,  \n"+
+        "	tbcli.clilon, \n"+
+        "	tbven.idemp, \n"+
+        "	tbvd.idprd, \n"+
+        "	tbprd.prdnom, \n"+
+        "	dm_cabfac.codvendedor, \n"+
+        "	tbprd.idlinea \n"+
+        "from tbven  \n"+
+        "LEFT JOIN dm_cabfac ON tbven.idven = dm_cabfac.idven \n"+
+        "LEFT JOIN tbcli ON tbven.idcli = tbcli.idcli \n"+
+        "LEFT JOIN tbvd ON tbven.idven = tbvd.idven \n"+
+        "LEFT JOIN tbprd ON tbvd.idprd = tbprd.idprd  \n"+
+        "where tbven.vfec between '"+obj.getString("fecha_inicio")+"' and '"+obj.getString("fecha_fin")+"' \n"+
+        " \n"+filtros;
+
+        JSONArray data = Dhm.query(consulta);
+        
+        obj.put("estado", "exito");
+        obj.put("data", data);
     }
 }
