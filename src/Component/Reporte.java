@@ -41,11 +41,18 @@ public class Reporte {
                     "tbtg.idemp as idtransportista, \n" + //
                     "trans.empnom as transportista, \n" + //
                     "count(tbven.idven) as cantidad ,\n" + //
+                    " ( \n"+ 
+                    "     select sum(tbvd.vdpre*tbvd.vdcan) \n"+ 
+                    "     from tbven ttv JOIN tbtg ON ttv.idtg=tbtg.idtg  \n"+ 
+                    "     JOIN tbvd ON ttv.idven=tbvd.idven  \n"+ 
+                    "     where tbven.idemp = ttv.idemp   \n"+ 
+                    "     and ttv.vtipo LIKE 'V%'  \n"+ 
+                    "     and ttv.vfec BETWEEN '" + obj.getString("fecha_inicio") + "T00:00:00' and '"+ obj.getString("fecha_fin") + "T23:59:59' \n" +
+                    " ) monto_pedidos, \n"+ 
                     "    STUFF((SELECT ',' + CAST(tbvvv.idven AS VARCHAR(MAX)) \n"
                     +
                     "           FROM tbven tbvvv LEFT JOIN tbtg ON tbvvv.idtg=tbtg.idtg \n" +
-                    "           WHERE tbvvv.vfec BETWEEN '" + obj.getString("fecha_inicio") + "T00:00:00' and '"
-                    + obj.getString("fecha_fin") + "T23:59:59' \n" +
+                    "           WHERE tbvvv.vfec BETWEEN '" + obj.getString("fecha_inicio") + "T00:00:00' and '"+ obj.getString("fecha_fin") + "T23:59:59' \n" +
                     "           and tbvvv.vtipo LIKE 'V%' \n" +
                     "           AND tbven.idemp = tbvvv.idemp  \n" +
                     "           FOR XML PATH('')), 1, 1, '') AS idven \n" +
@@ -73,20 +80,16 @@ public class Reporte {
                     continue;
                 if (!pedido.has("idven") || pedido.isNull("idven"))
                     continue;
-                consulta += "select '" + pedido.get("idemp") + "' as idemp, \n" +
+                consulta += "select '" + pedido.get("idemp") + "_"+pedido.get("idtransportista")+"' as idemp, \n" +
                         "array_to_json(array_agg(visita_transportista.*)) as visitas, \n" +
                         "count(visita_transportista.idven) as cantidad, \n" +
                         "sum(visita_transportista.monto) as monto ,\n" +
-                        "sum(CASE WHEN visita_transportista.tipo  in ('ENTREGADO')  THEN 1 ELSE 0 END) as cantidad_entregados, \n"
-                        +
-                        "sum(CASE WHEN visita_transportista.tipo  in ('ENTREGADO')  THEN visita_transportista.monto ELSE 0 END) as monto_entregados, \n"
-                        +
-                        "sum(CASE WHEN visita_transportista.tipo  in ( 'ENTREGADO PARCIALMENTE')  THEN 1 ELSE 0 END) as cantidad_entregados_parciales, \n"
-                        +
-                        "sum(CASE WHEN visita_transportista.tipo  in ( 'ENTREGADO PARCIALMENTE')  THEN visita_transportista.monto ELSE 0 END) as monto_entregados_parciales, \n"
-                        +
-                        "sum(CASE WHEN visita_transportista.tipo not in ('ENTREGADO', 'ENTREGADO PARCIALMENTE')  THEN 1 ELSE 0 END) as cantidad_rebotados \n"
-                        +
+                        pedido.get("monto_pedidos")+" as monto_pedidos ,\n" +
+                        "sum(CASE WHEN visita_transportista.tipo  in ('ENTREGADO')  THEN 1 ELSE 0 END) as cantidad_entregados, \n" +
+                        "sum(CASE WHEN visita_transportista.tipo  in ('ENTREGADO')  THEN visita_transportista.monto ELSE 0 END) as monto_entregados, \n" +
+                        "sum(CASE WHEN visita_transportista.tipo  in ( 'ENTREGADO PARCIALMENTE')  THEN 1 ELSE 0 END) as cantidad_entregados_parciales, \n" +
+                        "sum(CASE WHEN visita_transportista.tipo  in ( 'ENTREGADO PARCIALMENTE')  THEN visita_transportista.monto ELSE 0 END) as monto_entregados_parciales, \n" +
+                        "sum(CASE WHEN visita_transportista.tipo not in ('ENTREGADO', 'ENTREGADO PARCIALMENTE')  THEN 1 ELSE 0 END) as cantidad_rebotados \n" +
                         "from visita_transportista \n" +
                         "where CAST(visita_transportista.idven AS INTEGER) in (" + pedido.getString("idven") + ") \n" +
                         "and visita_transportista.idven is not null \n" +

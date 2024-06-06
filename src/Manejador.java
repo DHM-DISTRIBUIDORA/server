@@ -50,6 +50,7 @@ public class Manejador {
             case LocationInfo.COMPONENT: LocationInfo.onMessage(obj, session); break;
             case Log.COMPONENT: Log.onMessage(obj, session); break;
             case ZonaEmpleado.COMPONENT: ZonaEmpleado.onMessage(obj, session); break;
+            case AlmacenEmpleado.COMPONENT: AlmacenEmpleado.onMessage(obj, session); break;
         }
     }
 }

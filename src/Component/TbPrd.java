@@ -3,8 +3,10 @@ package Component;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import Server.SSSAbstract.SSSessionAbstract;
+import Servisofts.SPGConect;
 import Servisofts.SUtil;
 
 public class TbPrd {
@@ -83,14 +85,29 @@ public class TbPrd {
 
     public static void getAllSimple(JSONObject obj, SSSessionAbstract session) {
 
-        String almacen = "";
-        if(obj.has("idalm") && !obj.isNull("idalm")){
-            almacen = " and idalm = "+obj.get("idalm")+" ";
-        }
-
-        SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
+       
 
         try {
+
+             
+            String almacen = " and idalm in (1) ";
+            
+            if(obj.has("idemp") && !obj.isNull("idemp")){
+                String consulta = "select array_to_json(array_agg(idalm)) as json\n" + //
+                                    "from almacen_empleado\n" + //
+                                    "where almacen_empleado.estado > 0\n" + //
+                                    "and almacen_empleado.idemp = "+obj.get("idemp")+"\n" + //
+                                    "and almacen_empleado.dia =  date_part('dow',current_date)";
+                JSONArray idalms = SPGConect.ejecutarConsultaArray(consulta);
+                
+                if(idalms!=null && !idalms.isEmpty()){
+                    almacen = " and idalm in ("+idalms.toString().replaceAll("\\[", "").replaceAll("\\]", "")+")";
+                }
+            }
+    
+            SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
+
+
             String consulta = "SELECT \n" + //
                     "    tbprd.prdcod,\n" + //
                     "    tbprd.prduxcdes,\n" + //

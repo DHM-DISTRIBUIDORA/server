@@ -262,10 +262,17 @@ public class TbCli {
                                 ") tabla";
                         JSONArray clicods = Dhm.query(consulta);
 
-                        cantCliZonas.put(tbcli.get("idz") + "", clicods.getJSONObject(0));
+                        if(clicods != null && clicods.length()>0){
+                            cantCliZonas.put(tbcli.get("idz") + "", clicods.getJSONObject(0));
+                        }else{
+                            cantCliZonas.put(tbcli.get("idz") + "", new JSONObject().put("cant", 0));
+                        }
 
-                        cantCliZonas.getJSONObject(tbcli.get("idz") + "").put("cant",
-                                cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
+                        
+                        
+
+                        cantCliZonas.getJSONObject(tbcli.get("idz") + "")
+                        .put("cant", cantCliZonas.getJSONObject(tbcli.get("idz") + "").getInt("cant") + 1);
                         String znom = "nozone";
 
                         String old_clicod = tbcli.getString("clicod");
